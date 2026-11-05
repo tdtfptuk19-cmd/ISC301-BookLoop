@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Kiểm duyệt tin đăng sách')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('listings')}"></div>
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-book me-2 text-info"></i>Quản lý &amp; Kiểm duyệt tin đăng</div>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <div class="admin-content">
+
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Search / Filter -->
+            <div class="admin-card mb-4 shadow-sm">
+                <div class="card-header fw-bold">Tìm kiếm &amp; Lọc tin đăng</div>
+                <div class="p-3">
+                    <form th:action="@{/admin/listings}" method="get" class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Từ khóa (Tên sách, tác giả...)</label>
+                            <input type="text" name="keyword" th:value="${keyword}"
+                                   class="form-control form-control-sm" placeholder="Nhập từ khóa tìm kiếm..."/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Thể loại</label>
+                            <select name="category" class="form-select form-select-sm">
+                                <option value="">Tất cả thể loại</option>
+                                <option th:each="cat : ${categories}" th:value="${cat.name}"
+                                        th:text="${cat.name}"
+                                        th:selected="${selectedCategory == cat.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Trạng thái</label>
+                            <select name="status" class="form-select form-select-sm">
+                                <option value="">Tất cả trạng thái</option>
+                                <option th:each="s : ${statuses}" th:value="${s.name()}"
+                                        th:text="${s.displayName}"
+                                        th:selected="${selectedStatus == s.name()}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm
+                            </button>
+                            <a th:href="@{/admin/listings}" class="btn btn-outline-secondary btn-sm">Xóa lọc</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Listings Table -->
+            <div class="admin-card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Danh sách tất cả tin đăng</span>
+                    <span class="badge bg-primary" th:text="${listings.totalElements} + ' tin'"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">ID</th>
+                                <th>Tiêu đề sách</th>
+                                <th>Người bán</th>
+                                <th>Giá bán</th>
+                                <th>Ưu tiên</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày đăng</th>
+                                <th class="text-end pe-3">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${listings.isEmpty()}">
+                                <td colspan="8" class="text-center text-muted py-4">Không tìm thấy tin đăng nào.</td>
+                            </tr>
+                            <tr th:each="p : ${listings}">
+                                <td class="ps-3 text-muted small" th:text="${p.id}"></td>
+                                <td>
+                                    <a th:href="@{/admin/listings/{id}(id=${p.id})}"
+                                       th:text="${#strings.abbreviate(p.title, 35)}"
+                                       class="text-decoration-none fw-bold text-dark"></a>
+                                </td>
+                                <td class="small" th:text="${p.seller.fullName}"></td>
+                                <td class="small fw-bold text-primary" th:text="${@formatUtils.formatVnd(p.price)}">0 ₫</td>
+                                <td>
+                                    <span th:if="${p.promoted}" class="badge-promoted" style="font-size: 0.65rem;">
+                                        <i class="fa-solid fa-star"></i> Nổi bật
+                                    </span>
+                                    <span th:unless="${p.promoted}" class="text-muted small">Thường</span>
+                                </td>
+                                <td>
+                                    <span th:text="${p.status.displayName}"
+                                          th:classappend="${p.status.name() == 'AVAILABLE'} ? 'badge bg-success' : (${p.status.name() == 'SOLD'} ? 'badge bg-secondary' : 'badge bg-danger')"
+                                          class="badge-status"></span>
+                                </td>
+                                <td class="text-muted small"
+                                    th:text="${@formatUtils.formatDate(p.createdAt)}"></td>
+                                <td class="text-end pe-3">
+                                    <a th:href="@{/admin/listings/{id}(id=${p.id})}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+</body>
+</html>

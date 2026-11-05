@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/layout :: head('Browse Books')}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Tất cả sách đang bán')}"></head>
 <body>
 <nav th:replace="~{layout/layout :: navbar}"></nav>
 
@@ -8,14 +8,19 @@
 
     <!-- Page Header -->
     <div class="mb-4">
-        <h1 class="section-title">All Books Available</h1>
-        <p class="text-muted" th:text="${totalItems} + ' book(s) available for sale'">Books available</p>
+        <h1 class="section-title">Tất cả sách đang bán</h1>
+        <p class="text-muted" th:text="'Hiện có ' + ${totalItems} + ' cuốn sách sẵn sàng giao dịch'">Sách có sẵn</p>
     </div>
 
-    <!-- Flash messages -->
+    <!-- Flash messages & warnings -->
     <div th:if="${param.notFound}" class="alert-warning-bl mb-4">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <span>That listing could not be found.</span>
+        <span>Không tìm thấy thông tin sách yêu cầu.</span>
+    </div>
+    <div th:if="${priceRangeWarning}" class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+        <i class="fa-solid fa-circle-info me-2"></i>
+        <span th:text="${priceRangeWarning}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
     <div class="row g-4">
@@ -29,13 +34,13 @@
 
                     <!-- Keyword Search -->
                     <div class="mb-4">
-                        <div class="filter-section-title">Search</div>
+                        <div class="filter-section-title">Tìm kiếm</div>
                         <div class="input-group">
                             <input type="text" name="keyword" id="searchKeyword"
                                    th:value="${keyword}"
                                    class="form-control"
                                    style="border-radius: var(--radius-lg) 0 0 var(--radius-lg); border: 1.5px solid var(--color-gray-200); font-size: 0.875rem;"
-                                   placeholder="Title, course, author..."/>
+                                   placeholder="Tên sách, mã HP, tác giả..."/>
                             <button type="submit"
                                     style="background:var(--color-primary);color:#fff;border:none;padding:0 1rem;border-radius:0 var(--radius-lg) var(--radius-lg) 0;font-size:0.875rem;">
                                 <i class="fa-solid fa-magnifying-glass"></i>
@@ -43,30 +48,30 @@
                         </div>
                     </div>
 
-                    <!-- Category Filter -->
+                    <!-- Category Filter from Database -->
                     <div class="mb-4" th:if="${not #lists.isEmpty(categories)}">
-                        <div class="filter-section-title">Category</div>
+                        <div class="filter-section-title">Thể loại sách</div>
                         <select name="category" id="categoryFilter"
                                 class="form-select form-select-sm"
                                 style="border-radius: var(--radius-md); border: 1.5px solid var(--color-gray-200);"
                                 onchange="document.getElementById('filterForm').submit()">
-                            <option value="">All Categories</option>
+                            <option value="">Tất cả thể loại</option>
                             <option th:each="cat : ${categories}"
-                                    th:value="${cat}"
-                                    th:text="${cat}"
-                                    th:selected="${cat == selectedCategory}">
+                                    th:value="${cat.name}"
+                                    th:text="${cat.name}"
+                                    th:selected="${cat.name == selectedCategory}">
                             </option>
                         </select>
                     </div>
 
                     <!-- Campus Filter -->
                     <div class="mb-4" th:if="${not #lists.isEmpty(campuses)}">
-                        <div class="filter-section-title">Campus / Meetup</div>
+                        <div class="filter-section-title">Khu vực / Điểm hẹn</div>
                         <select name="campus" id="campusFilter"
                                 class="form-select form-select-sm"
                                 style="border-radius: var(--radius-md); border: 1.5px solid var(--color-gray-200);"
                                 onchange="document.getElementById('filterForm').submit()">
-                            <option value="">All Campuses</option>
+                            <option value="">Tất cả khu vực</option>
                             <option th:each="camp : ${campuses}"
                                     th:value="${camp}"
                                     th:text="${camp}"
@@ -77,59 +82,57 @@
 
                     <!-- Condition Filter -->
                     <div class="mb-4">
-                        <div class="filter-section-title">Condition</div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},minPrice=${minPrice},maxPrice=${maxPrice})}"
-                               class="filter-chip"
-                               th:classappend="${selectedCondition == null or selectedCondition.isEmpty()} ? 'active' : ''">
-                                All
-                            </a>
-                            <th:block th:each="cond : ${conditions}">
-                                <a th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},condition=${cond.name()},minPrice=${minPrice},maxPrice=${maxPrice})}"
-                                   class="filter-chip"
-                                   th:classappend="${selectedCondition == cond.name()} ? 'active' : ''"
-                                   th:text="${cond.displayName}">
-                                </a>
-                            </th:block>
-                        </div>
+                        <div class="filter-section-title">Tình trạng sách</div>
+                        <select name="condition" id="conditionFilter"
+                                class="form-select form-select-sm"
+                                style="border-radius: var(--radius-md); border: 1.5px solid var(--color-gray-200);">
+                            <option value="">Tất cả tình trạng</option>
+                            <option th:each="cond : ${conditions}"
+                                    th:value="${cond.name()}"
+                                    th:text="${cond.displayName}"
+                                    th:selected="${cond.name() == selectedCondition}">
+                            </option>
+                        </select>
                     </div>
 
                     <!-- Price Range Filter -->
                     <div class="mb-4">
-                        <div class="filter-section-title">Price Range</div>
+                        <div class="filter-section-title">Khoảng giá (VNĐ)</div>
                         <div class="row g-2">
                             <div class="col-6">
+                                <label for="minPrice" class="small text-muted d-block mb-1">Từ (đ)</label>
                                 <input type="number" name="minPrice" id="minPrice"
                                        th:value="${minPrice}"
                                        class="form-control form-control-sm"
                                        style="border-radius: var(--radius-md); border: 1.5px solid var(--color-gray-200);"
-                                       placeholder="Min $" min="0" step="0.01"/>
+                                       placeholder="VD: 20000" min="0" step="5000"/>
                             </div>
                             <div class="col-6">
+                                <label for="maxPrice" class="small text-muted d-block mb-1">Đến (đ)</label>
                                 <input type="number" name="maxPrice" id="maxPrice"
                                        th:value="${maxPrice}"
                                        class="form-control form-control-sm"
                                        style="border-radius: var(--radius-md); border: 1.5px solid var(--color-gray-200);"
-                                       placeholder="Max $" min="0" step="0.01"/>
+                                       placeholder="VD: 150000" min="0" step="5000"/>
                             </div>
                         </div>
-                        <!-- Hidden fields to preserve other filters on price submit -->
-                        <input type="hidden" name="keyword" th:value="${keyword}"/>
-                        <input type="hidden" name="category" th:value="${selectedCategory}"/>
-                        <input type="hidden" name="campus" th:value="${selectedCampus}"/>
-                        <input type="hidden" name="condition" th:value="${selectedCondition}"/>
-                        <button type="submit" class="btn-outline-bl w-100 mt-2"
-                                style="border-radius:var(--radius-md);">
-                            Apply Price Filter
-                        </button>
                     </div>
 
-                    <!-- Clear Filters -->
-                    <a th:href="@{/books}"
-                       class="d-block text-center text-muted small mt-2"
-                       style="text-decoration:underline;">
-                        Clear all filters
-                    </a>
+                    <!-- Hidden Sort parameter to preserve sorting across form submissions -->
+                    <input type="hidden" name="sort" id="sortHiddenInput" th:value="${selectedSort ?: 'newest'}"/>
+
+                    <!-- Action buttons -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn-primary-bl w-100 justify-content-center"
+                                style="border-radius:var(--radius-md); padding: 0.6rem;">
+                            <i class="fa-solid fa-filter me-1"></i>Áp dụng bộ lọc
+                        </button>
+                        <a th:href="@{/books}"
+                           class="btn-outline-bl w-100 justify-content-center text-secondary border-secondary"
+                           style="border-radius:var(--radius-md); padding: 0.5rem; text-decoration:none;">
+                            <i class="fa-solid fa-rotate-left me-1"></i>Xóa tất cả bộ lọc
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -140,18 +143,24 @@
         <div class="col-lg-9">
 
             <!-- Sort + result count bar -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                 <span class="text-muted small">
-                    Showing <strong th:text="${#lists.size(products)}">0</strong>
-                    of <strong th:text="${totalItems}">0</strong> results
+                    Hiển thị <strong th:text="${#lists.size(products)}">0</strong>
+                    trên tổng số <strong th:text="${totalItems}">0</strong> kết quả
                     <th:block th:if="${keyword != null and !keyword.isEmpty()}">
-                        for "<strong th:text="${keyword}"></strong>"
+                        cho từ khóa "<strong th:text="${keyword}"></strong>"
                     </th:block>
                 </span>
-                <select id="sortSelect" class="form-select form-select-sm w-auto"
-                        style="border-radius: var(--radius-md); border:1.5px solid var(--color-gray-200); font-size:0.8rem;">
-                    <option>Newest First</option>
-                </select>
+                <div class="d-flex align-items-center gap-2">
+                    <label for="sortSelect" class="small text-muted text-nowrap mb-0"><i class="fa-solid fa-arrow-down-short-wide me-1"></i>Sắp xếp:</label>
+                    <select id="sortSelect" class="form-select form-select-sm" style="width: auto; min-width: 175px; border-radius: var(--radius-md);"
+                            onchange="document.getElementById('sortHiddenInput').value = this.value; document.getElementById('filterForm').submit();">
+                        <option value="newest" th:selected="${selectedSort == null or selectedSort == 'newest'}">Mới nhất &amp; Nổi bật</option>
+                        <option value="price_asc" th:selected="${selectedSort == 'price_asc'}">Giá: Thấp đến cao</option>
+                        <option value="price_desc" th:selected="${selectedSort == 'price_desc'}">Giá: Cao đến thấp</option>
+                        <option value="title_asc" th:selected="${selectedSort == 'title_asc'}">Tên sách: A - Z</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Results grid -->
@@ -159,17 +168,22 @@
                  class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4">
                 <div th:each="book : ${products}" class="col">
                     <a th:href="@{/books/{id}(id=${book.id})}" class="text-decoration-none">
-                        <div class="book-card">
+                        <div class="book-card h-100" th:classappend="${book.promoted ? 'book-card-promoted' : ''}">
                             <div class="book-card-image">
                                 <img th:if="${book.imageUrl != null and !#strings.isEmpty(book.imageUrl)}"
                                      th:src="${book.imageUrl}"
                                      th:alt="${book.title}"
-                                     onerror="this.parentElement.querySelector('.book-placeholder').style.display='block'; this.style.display='none';"/>
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
                                 <div class="book-placeholder"
-                                     th:style="${book.imageUrl != null and !#strings.isEmpty(book.imageUrl)} ? 'display:none' : ''">
-                                    📖
+                                     th:if="${book.imageUrl == null or #strings.isEmpty(book.imageUrl)}">
+                                    <i class="fa-solid fa-book-open"></i>
+                                    <span>Giáo trình</span>
                                 </div>
                                 <div class="book-card-badges">
+                                    <span th:if="${book.promoted}" class="badge-promoted">
+                                        <i class="fa-solid fa-star"></i> Nổi bật
+                                    </span>
                                     <span th:if="${book.courseCode != null}"
                                           class="badge-course" th:text="${book.courseCode}"></span>
                                     <span class="badge-condition"
@@ -179,17 +193,22 @@
                             </div>
                             <div class="book-card-body">
                                 <div class="book-card-meta"
-                                     th:text="${book.category != null ? book.category : 'Textbook'}"></div>
-                                <div class="book-card-title" th:text="${book.title}">Title</div>
+                                     th:text="${book.category != null ? book.category : 'Giáo trình'}"></div>
+                                <div class="book-card-title text-truncate-2" th:text="${book.title}">Tên sách</div>
                                 <div class="book-card-author" th:if="${book.author != null}"
                                      th:text="${book.author}"></div>
-                                <div class="book-card-footer">
-                                    <div class="book-card-price"
-                                         th:text="${'$' + book.price}">$0.00</div>
-                                    <div class="book-card-location">
-                                        <i class="fa-solid fa-location-dot"></i>
-                                        <span th:text="${book.campus}"></span>
+                                <div class="book-card-footer mt-auto flex-column align-items-stretch">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="book-card-price text-danger fw-bold"
+                                             th:text="${@formatUtils.formatVnd(book.price)}">0 ₫</div>
+                                        <div class="book-card-location">
+                                            <i class="fa-solid fa-location-dot"></i>
+                                            <span th:text="${book.campus}"></span>
+                                        </div>
                                     </div>
+                                    <span class="btn btn-sm btn-outline-primary rounded-pill w-100 text-center py-1">
+                                        <i class="fa-solid fa-eye me-1"></i>Xem chi tiết
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -200,10 +219,10 @@
             <!-- Empty Results -->
             <div th:if="${#lists.isEmpty(products)}" class="empty-state">
                 <div class="empty-icon">🔍</div>
-                <h3>No books found</h3>
-                <p>Try adjusting your filters or searching with different keywords.</p>
+                <h3>Không tìm thấy cuốn sách nào</h3>
+                <p>Thử điều chỉnh bộ lọc hoặc tìm kiếm bằng từ khóa khác.</p>
                 <a th:href="@{/books}" class="btn-primary-bl mt-3">
-                    <i class="fa-solid fa-rotate-left me-1"></i>Clear Filters
+                    <i class="fa-solid fa-rotate-left me-1"></i>Xóa bộ lọc
                 </a>
             </div>
 
@@ -211,7 +230,7 @@
             <div th:if="${totalPages > 1}" class="bl-pagination">
                 <!-- Previous -->
                 <a th:if="${currentPage > 0}"
-                   th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},condition=${selectedCondition},minPrice=${minPrice},maxPrice=${maxPrice},page=${currentPage - 1})}"
+                   th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},condition=${selectedCondition},minPrice=${minPrice},maxPrice=${maxPrice},sort=${selectedSort},page=${currentPage - 1})}"
                    class="page-btn">
                     <i class="fa-solid fa-chevron-left"></i>
                 </a>
@@ -222,7 +241,7 @@
                 <!-- Page numbers -->
                 <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
                     <a th:if="${i != currentPage}"
-                       th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},condition=${selectedCondition},minPrice=${minPrice},maxPrice=${maxPrice},page=${i})}"
+                       th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},condition=${selectedCondition},minPrice=${minPrice},maxPrice=${maxPrice},sort=${selectedSort},page=${i})}"
                        class="page-btn" th:text="${i + 1}">1</a>
                     <span th:if="${i == currentPage}" class="page-btn active"
                           th:text="${i + 1}">1</span>
@@ -230,7 +249,7 @@
 
                 <!-- Next -->
                 <a th:if="${currentPage < totalPages - 1}"
-                   th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},condition=${selectedCondition},minPrice=${minPrice},maxPrice=${maxPrice},page=${currentPage + 1})}"
+                   th:href="@{/books(keyword=${keyword},category=${selectedCategory},campus=${selectedCampus},condition=${selectedCondition},minPrice=${minPrice},maxPrice=${maxPrice},sort=${selectedSort},page=${currentPage + 1})}"
                    class="page-btn">
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>

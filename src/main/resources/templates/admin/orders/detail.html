@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Chi tiết đơn hàng')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('orders')}"></div>
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading">
+                <a th:href="@{/admin/orders}" class="text-decoration-none text-muted me-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <i class="fa-solid fa-receipt me-2 text-success"></i>Chi tiết đơn hàng
+            </div>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <div class="admin-content">
+            <div class="row g-3">
+                <div class="col-md-7">
+                    <div class="admin-card mb-3 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">Thông tin đơn hàng</span>
+                            <span class="font-monospace small text-muted" th:text="${order.orderNumber}"></span>
+                        </div>
+                        <div class="p-3">
+                            <table class="table table-borderless mb-0">
+                                <tr>
+                                    <td class="fw-bold text-muted small" style="width:140px;">Trạng thái</td>
+                                    <td>
+                                        <span th:text="${order.status.displayName}"
+                                              th:classappend="${order.status.name() == 'COMPLETED'} ? 'badge bg-success' : (${order.status.name() == 'PENDING'} ? 'badge bg-warning text-dark' : (${order.status.name() == 'CANCELLED'} ? 'badge bg-danger' : 'badge bg-info'))"
+                                              class="badge-status"></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Thời gian đặt</td>
+                                    <td th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}"></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Hình thức giao dịch</td>
+                                    <td th:text="${order.paymentMethod.displayName}"></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Tổng thanh toán</td>
+                                    <td class="fw-bold text-primary fs-5" th:text="${@formatUtils.formatVnd(order.totalAmount)}">0 ₫</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Điện thoại người mua</td>
+                                    <td th:text="${order.contactPhone ?: '—'}"></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Ghi chú điểm hẹn</td>
+                                    <td th:text="${order.meetupNote ?: '—'}"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="admin-card shadow-sm">
+                        <div class="card-header fw-bold">Danh sách sách trong đơn</div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Sách</th>
+                                        <th>Người bán</th>
+                                        <th>Đơn giá</th>
+                                        <th>SL</th>
+                                        <th class="text-end pe-3">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="item : ${order.items}">
+                                        <td class="ps-3">
+                                            <div class="fw-bold" th:text="${item.bookTitle}"></div>
+                                            <small class="text-muted" th:text="${item.bookAuthor}"></small>
+                                        </td>
+                                        <td class="small">
+                                            <a th:if="${item.seller != null}"
+                                               th:href="@{/admin/users/{id}(id=${item.seller.id})}"
+                                               th:text="${item.seller.fullName}"
+                                               class="text-decoration-none fw-semibold"></a>
+                                            <span th:if="${item.seller == null}" class="text-muted">Không xác định</span>
+                                        </td>
+                                        <td class="small" th:text="${@formatUtils.formatVnd(item.priceAtPurchase)}">0 ₫</td>
+                                        <td class="small" th:text="${item.quantity}">1</td>
+                                        <td class="small fw-bold text-primary text-end pe-3" th:text="${@formatUtils.formatVnd(item.subtotal)}">0 ₫</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-5">
+                    <div class="admin-card mb-3 shadow-sm">
+                        <div class="card-header fw-bold">Thông tin người mua</div>
+                        <div class="p-3">
+                            <table class="table table-borderless mb-0">
+                                <tr>
+                                    <td class="fw-bold text-muted small" style="width:120px;">Họ tên</td>
+                                    <td>
+                                        <a th:href="@{/admin/users/{id}(id=${order.buyer.id})}"
+                                           th:text="${order.buyer.fullName}"
+                                           class="text-decoration-none fw-bold"></a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Email</td>
+                                    <td th:text="${order.buyer.email}"></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Trường</td>
+                                    <td th:text="${order.buyer.university ?: '—'}"></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Khu vực</td>
+                                    <td th:text="${order.buyer.campus ?: '—'}"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="admin-card shadow-sm">
+                        <div class="card-header fw-bold">Chính sách vận hành nền tảng</div>
+                        <div class="p-3 text-muted small">
+                            <p class="mb-0">
+                                Theo quy định nền tảng C2C, trạng thái đơn hàng do người mua và người bán trực tiếp thỏa thuận và xác nhận khi nhận sách. Quản trị viên theo dõi thông tin để hỗ trợ giải quyết khiếu nại hoặc tranh chấp phát sinh.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+</body>
+</html>

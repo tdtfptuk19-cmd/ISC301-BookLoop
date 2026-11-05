@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{admin/layout :: adminHead('Quản lý người dùng')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('users')}"></div>
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-users me-2 text-primary"></i>Quản lý người dùng</div>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <div class="admin-content">
+
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Search / Filter -->
+            <div class="admin-card mb-4 shadow-sm">
+                <div class="card-header fw-bold">Tìm kiếm &amp; Lọc người dùng</div>
+                <div class="p-3">
+                    <form th:action="@{/admin/users}" method="get" class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Từ khóa (Họ tên hoặc email)</label>
+                            <input type="text" name="keyword" th:value="${keyword}"
+                                   class="form-control form-control-sm" placeholder="Tìm theo tên hoặc email..."/>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Vai trò</label>
+                            <select name="role" class="form-select form-select-sm">
+                                <option value="">Tất cả vai trò</option>
+                                <option th:each="r : ${roles}" th:value="${r.name()}"
+                                        th:text="${r.name()}"
+                                        th:selected="${selectedRole == r.name()}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Trạng thái tài khoản</label>
+                            <select name="enabled" class="form-select form-select-sm">
+                                <option value="">Tất cả</option>
+                                <option value="true" th:selected="${selectedEnabled == 'true'}">Đang hoạt động</option>
+                                <option value="false" th:selected="${selectedEnabled == 'false'}">Bị vô hiệu hóa</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm
+                            </button>
+                            <a th:href="@{/admin/users}" class="btn btn-outline-secondary btn-sm">Xóa lọc</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="admin-card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Tất cả tài khoản thành viên</span>
+                    <span class="badge bg-primary" th:text="${users.totalElements} + ' người dùng'"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">ID</th>
+                                <th>Họ và tên</th>
+                                <th>Email</th>
+                                <th>Vai trò</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày đăng ký</th>
+                                <th class="text-end pe-3">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${users.isEmpty()}">
+                                <td colspan="7" class="text-center text-muted py-4">Không tìm thấy người dùng nào.</td>
+                            </tr>
+                            <tr th:each="u : ${users}">
+                                <td class="ps-3 text-muted small" th:text="${u.id}"></td>
+                                <td>
+                                    <a th:href="@{/admin/users/{id}(id=${u.id})}"
+                                       th:text="${u.fullName}"
+                                       class="text-decoration-none fw-bold text-dark"></a>
+                                </td>
+                                <td class="text-muted small" th:text="${u.email}"></td>
+                                <td>
+                                    <span th:text="${u.role.name()}"
+                                          th:classappend="${u.role.name() == 'ADMIN'} ? 'badge bg-danger' : 'badge bg-secondary'"
+                                          class="badge-status"></span>
+                                </td>
+                                <td>
+                                    <span th:if="${u.enabled}" class="badge bg-success badge-status">Hoạt động</span>
+                                    <span th:unless="${u.enabled}" class="badge bg-danger badge-status">Vô hiệu hóa</span>
+                                </td>
+                                <td class="text-muted small"
+                                    th:text="${@formatUtils.formatDate(u.createdAt)}"></td>
+                                <td class="text-end pe-3">
+                                    <a th:href="@{/admin/users/{id}(id=${u.id})}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="p-3 d-flex justify-content-between align-items-center border-top" th:if="${users.totalPages > 1}">
+                    <small class="text-muted">
+                        Trang <span th:text="${users.number + 1}"></span>
+                        trên <span th:text="${users.totalPages}"></span>
+                    </small>
+                    <div class="btn-group btn-group-sm">
+                        <a th:href="@{/admin/users(page=${users.number - 1}, keyword=${keyword}, role=${selectedRole}, enabled=${selectedEnabled})}"
+                           th:classappend="${!users.hasPreviousPage()} ? 'disabled' : ''"
+                           class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                        <a th:href="@{/admin/users(page=${users.number + 1}, keyword=${keyword}, role=${selectedRole}, enabled=${selectedEnabled})}"
+                           th:classappend="${!users.hasNextPage()} ? 'disabled' : ''"
+                           class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+</body>
+</html>

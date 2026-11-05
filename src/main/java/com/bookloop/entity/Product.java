@@ -23,7 +23,7 @@ public class Product {
 
     @NotBlank(message = "Book title is required")
     @Size(max = 255, message = "Title cannot exceed 255 characters")
-    @Column(name = "title", nullable = false)
+    @Column(name = "title", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String title;
 
     @Size(max = 3000, message = "Description cannot exceed 3000 characters")
@@ -42,15 +42,19 @@ public class Product {
     private Condition condition;
 
     @Size(max = 100, message = "Category cannot exceed 100 characters")
-    @Column(name = "category", length = 100)
+    @Column(name = "category", length = 100, columnDefinition = "NVARCHAR(100)")
     private String category;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category categoryRef;
+
     @Size(max = 150, message = "Author cannot exceed 150 characters")
-    @Column(name = "author", length = 150)
+    @Column(name = "author", length = 150, columnDefinition = "NVARCHAR(150)")
     private String author;
 
     @Size(max = 150, message = "Publisher cannot exceed 150 characters")
-    @Column(name = "publisher", length = 150)
+    @Column(name = "publisher", length = 150, columnDefinition = "NVARCHAR(150)")
     private String publisher;
 
     @Size(max = 50, message = "Edition cannot exceed 50 characters")
@@ -74,7 +78,7 @@ public class Product {
 
     @NotBlank(message = "Campus/meetup location is required")
     @Size(max = 100)
-    @Column(name = "campus", nullable = false, length = 100)
+    @Column(name = "campus", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String campus;
 
     @Enumerated(EnumType.STRING)
@@ -87,9 +91,35 @@ public class Product {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /**
+     * Admin-provided note when hiding a listing (e.g., policy violation reason).
+     * Not shown to regular users.
+     */
+    @Column(name = "moderation_note", columnDefinition = "NVARCHAR(1000)")
+    private String moderationNote;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
+
+    /**
+     * Optional link to curated academic textbook catalog.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_book_id", nullable = true)
+    private AcademicBook academicBook;
+
+    /**
+     * Whether this listing has active paid promotion.
+     */
+    @Column(name = "is_promoted", nullable = false, columnDefinition = "BIT NOT NULL DEFAULT 0")
+    private boolean promoted = false;
+
+    /**
+     * Expiration timestamp for the promotion.
+     */
+    @Column(name = "promoted_until")
+    private LocalDateTime promotedUntil;
 
     @PrePersist
     protected void onCreate() {
@@ -150,11 +180,25 @@ public class Product {
     }
 
     public String getCategory() {
-        return category;
+        if (category != null && !category.isBlank()) {
+            return category;
+        }
+        return categoryRef != null ? categoryRef.getName() : null;
     }
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Category getCategoryRef() {
+        return categoryRef;
+    }
+
+    public void setCategoryRef(Category categoryRef) {
+        this.categoryRef = categoryRef;
+        if (categoryRef != null && (this.category == null || this.category.isBlank())) {
+            this.category = categoryRef.getName();
+        }
     }
 
     public String getAuthor() {
@@ -251,5 +295,41 @@ public class Product {
 
     public void setSeller(User seller) {
         this.seller = seller;
+    }
+
+    public String getModerationNote() {
+        return moderationNote;
+    }
+
+    public void setModerationNote(String moderationNote) {
+        this.moderationNote = moderationNote;
+    }
+
+    public AcademicBook getAcademicBook() {
+        return academicBook;
+    }
+
+    public void setAcademicBook(AcademicBook academicBook) {
+        this.academicBook = academicBook;
+    }
+
+    public boolean isPromoted() {
+        return promoted;
+    }
+
+    public void setPromoted(boolean promoted) {
+        this.promoted = promoted;
+    }
+
+    public LocalDateTime getPromotedUntil() {
+        return promotedUntil;
+    }
+
+    public void setPromotedUntil(LocalDateTime promotedUntil) {
+        this.promotedUntil = promotedUntil;
+    }
+
+    public boolean isPromotionActive() {
+        return promoted && promotedUntil != null && promotedUntil.isAfter(LocalDateTime.now());
     }
 }

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Chi tiết tin đăng')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('listings')}"></div>
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading">
+                <a th:href="@{/admin/listings}" class="text-decoration-none text-muted me-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <i class="fa-solid fa-book me-2 text-info"></i>Chi tiết &amp; Kiểm duyệt tin đăng
+            </div>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <div class="admin-content">
+
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row g-3">
+                <!-- Listing Info -->
+                <div class="col-md-7">
+                    <div class="admin-card shadow-sm">
+                        <div class="card-header fw-bold">
+                            <i class="fa-solid fa-book me-2 text-info"></i>Thông tin chi tiết tin đăng
+                        </div>
+                        <div class="p-3">
+                            <div class="mb-3 text-center p-3 bg-light rounded" style="max-width: 220px;">
+                                <img th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}"
+                                     th:src="${product.imageUrl}" th:alt="${product.title}"
+                                     loading="lazy"
+                                     style="max-height:160px; max-width:100%; border-radius:6px; object-fit:contain; box-shadow:0 4px 6px rgba(0,0,0,0.1);"
+                                     onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
+                                <div th:if="${product.imageUrl == null or #strings.isEmpty(product.imageUrl)}"
+                                     class="book-placeholder mx-auto" style="width: 100px; height: 140px;">
+                                    <i class="fa-solid fa-book-open"></i>
+                                    <span>Giáo trình</span>
+                                </div>
+                            </div>
+                            <table class="table table-borderless mb-0">
+                                <tr><td class="fw-bold text-muted small" style="width:140px;">Mã tin (ID)</td><td th:text="${product.id}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Tiêu đề sách</td><td class="fw-bold" th:text="${product.title}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Tác giả</td><td th:text="${product.author ?: '—'}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Nhà xuất bản</td><td th:text="${product.publisher ?: '—'}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Tái bản</td><td th:text="${product.edition ?: '—'}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Mã ISBN</td><td th:text="${product.isbn ?: '—'}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Danh mục</td><td th:text="${product.category ?: '—'}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Mã học phần</td><td class="fw-bold text-primary" th:text="${product.courseCode ?: '—'}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Giá bán</td><td class="fw-bold text-primary" th:text="${@formatUtils.formatVnd(product.price)}">0 ₫</td></tr>
+                                <tr><td class="fw-bold text-muted small">Tình trạng sách</td><td th:text="${product.condition.displayName}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Khu vực hẹn</td><td th:text="${product.campus}"></td></tr>
+                                <tr><td class="fw-bold text-muted small">Ưu tiên nổi bật</td>
+                                    <td>
+                                        <span th:if="${product.promoted}" class="badge-promoted">
+                                            <i class="fa-solid fa-star"></i> Đang nổi bật
+                                        </span>
+                                        <span th:unless="${product.promoted}" class="text-muted small">Bình thường</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Trạng thái</td>
+                                    <td>
+                                        <span th:text="${product.status.displayName}"
+                                              th:classappend="${product.status.name() == 'AVAILABLE'} ? 'badge bg-success' : (${product.status.name() == 'SOLD'} ? 'badge bg-secondary' : 'badge bg-danger')"
+                                              class="badge-status"></span>
+                                    </td>
+                                </tr>
+                                <tr><td class="fw-bold text-muted small">Ngày đăng</td>
+                                    <td th:text="${@formatUtils.formatDate(product.createdAt)}"></td></tr>
+                                <tr>
+                                    <td class="fw-bold text-muted small">Người bán</td>
+                                    <td>
+                                        <a th:href="@{/admin/users/{id}(id=${product.seller.id})}"
+                                           th:text="${product.seller.fullName}"
+                                           class="text-decoration-none fw-semibold"></a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Moderation Note (admin only) -->
+                            <div th:if="${product.moderationNote}" class="mt-3 p-2 bg-danger bg-opacity-10 rounded border border-danger border-opacity-25">
+                                <small class="text-danger fw-bold">
+                                    <i class="fa-solid fa-shield-halved me-1"></i>Ghi chú kiểm duyệt của Quản trị viên:
+                                </small>
+                                <p class="mb-0 small" th:text="${product.moderationNote}"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Moderation Actions -->
+                <div class="col-md-5">
+                    <!-- Hide Listing -->
+                    <div class="admin-card mb-3 shadow-sm" th:if="${product.status.name() != 'SOLD'}">
+                        <div class="card-header fw-bold">
+                            <i class="fa-solid fa-eye-slash me-2 text-danger"></i>Thao tác kiểm duyệt tin
+                        </div>
+                        <div class="p-3">
+                            <p class="text-muted small mb-3">
+                                Ẩn tin sẽ gỡ tin đăng này khỏi kết quả tìm kiếm và trang chủ marketplace để xử lý vi phạm.
+                            </p>
+                            <form th:if="${product.status.name() == 'AVAILABLE'}"
+                                  th:action="@{/admin/listings/{id}/hide(id=${product.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc chắn muốn ẩn tin đăng này?');">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Lý do ẩn tin (Ghi chú kiểm duyệt)</label>
+                                    <textarea name="moderationNote" class="form-control form-control-sm" rows="2"
+                                              placeholder="Nhập lý do vi phạm..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-danger btn-sm w-100">
+                                    <i class="fa-solid fa-eye-slash me-1"></i>Xác nhận ẩn tin đăng
+                                </button>
+                            </form>
+                            <form th:if="${product.status.name() == 'HIDDEN'}"
+                                  th:action="@{/admin/listings/{id}/unhide(id=${product.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Khôi phục tin đăng về trạng thái Đang bán?');">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="fa-solid fa-eye me-1"></i>Khôi phục hiển thị (Đang bán)
+                                </button>
+                            </form>
+                            <p th:if="${product.status.name() == 'SOLD'}" class="text-muted small mb-0">
+                                Sách đã bán thành công, không thể thay đổi trạng thái ẩn.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- View on marketplace -->
+                    <div class="admin-card shadow-sm">
+                        <div class="card-header fw-bold">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-2"></i>Liên kết tin trên sàn
+                        </div>
+                        <div class="p-3">
+                            <a th:href="@{/books/{id}(id=${product.id})}"
+                               class="btn btn-outline-secondary btn-sm w-100" target="_blank">
+                                <i class="fa-solid fa-external-link-alt me-1"></i>Xem trang sách công khai
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+</body>
+</html>

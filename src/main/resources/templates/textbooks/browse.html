@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Tìm giáo trình đại học')}"></head>
+<body>
+<nav th:replace="~{layout/layout :: navbar}"></nav>
+
+<div class="page-container py-4">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Tìm giáo trình</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-1">
+                <i class="fa-solid fa-graduation-cap text-primary me-2"></i>Giáo trình &amp; Học liệu Đại học
+            </h2>
+            <p class="text-muted small mb-0">Tra cứu giáo trình chuẩn theo trường, ngành học và môn học tại Hòa Lạc (FPTU, ĐHQGHN, HV Tài chính)</p>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form th:action="@{/textbooks}" method="get" class="row g-3 align-items-end" id="textbookFilterForm">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">1. Trường Đại học</label>
+                    <select name="institutionId" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Tất cả các trường (FPTU, VNU, AOF)</option>
+                        <option th:each="inst : ${institutions}"
+                                th:value="${inst.id}"
+                                th:text="${inst.name + ' (' + inst.shortName + ')'}"
+                                th:selected="${selectedInstitutionId == inst.id}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">2. Ngành / Chuyên ngành</label>
+                    <select name="programId" class="form-select form-select-sm" onchange="this.form.submit()"
+                            th:disabled="${programs == null or programs.isEmpty()}">
+                        <option value="">Tất cả các ngành</option>
+                        <option th:each="p : ${programs}"
+                                th:value="${p.id}"
+                                th:text="${p.name + (p.programCode != null ? ' (' + p.programCode + ')' : '')}"
+                                th:selected="${selectedProgramId == p.id}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">3. Môn học / Học phần</label>
+                    <select name="courseId" class="form-select form-select-sm" onchange="this.form.submit()"
+                            th:disabled="${courses == null or courses.isEmpty()}">
+                        <option value="">Tất cả các môn học</option>
+                        <option th:each="c : ${courses}"
+                                th:value="${c.id}"
+                                th:text="${(c.courseCode != null ? c.courseCode + ' - ' : '') + c.name}"
+                                th:selected="${selectedCourseId == c.id}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">4. Từ khóa tìm kiếm</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="keyword" th:value="${keyword}"
+                               class="form-control" placeholder="Tên sách, mã môn, ISBN..."/>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Category and Action Controls -->
+                <div class="col-md-6" th:if="${categories != null and !categories.isEmpty()}">
+                    <label class="form-label small fw-bold">5. Nhóm chuyên ngành</label>
+                    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Tất cả chuyên ngành</option>
+                        <option th:each="cat : ${categories}"
+                                th:value="${cat}"
+                                th:text="${cat}"
+                                th:selected="${selectedCategory == cat}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 d-flex gap-2 justify-content-md-end">
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4">
+                        <i class="fa-solid fa-filter me-1"></i>Lọc giáo trình
+                    </button>
+                    <a th:href="@{/textbooks}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        <i class="fa-solid fa-rotate-left me-1"></i>Xóa bộ lọc
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Campus Selection Pills -->
+    <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+        <span class="small fw-bold text-muted me-2"><i class="fa-solid fa-building-columns me-1"></i>Trường:</span>
+        <a th:href="@{/textbooks(keyword=${keyword},category=${selectedCategory})}"
+           th:classappend="${selectedInstitutionId == null} ? 'btn-primary' : 'btn-outline-secondary'"
+           class="btn btn-sm rounded-pill px-3">
+            Tất cả trường
+        </a>
+        <a th:each="inst : ${institutions}"
+           th:href="@{/textbooks(institutionId=${inst.id},keyword=${keyword},category=${selectedCategory})}"
+           th:classappend="${selectedInstitutionId == inst.id} ? 'btn-primary' : 'btn-outline-secondary'"
+           class="btn btn-sm rounded-pill px-3"
+           th:text="${inst.shortName + ' - ' + inst.name}">
+        </a>
+    </div>
+
+    <!-- Results count bar -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted small">
+            Hiển thị <strong th:text="${books.numberOfElements}">0</strong>
+            trên tổng số <strong th:text="${books.totalElements}">0</strong> giáo trình học thuật
+        </span>
+    </div>
+
+    <!-- Textbook Grid -->
+    <div class="row g-4" th:if="${!books.isEmpty()}">
+        <div class="col-sm-6 col-md-4 col-lg-3" th:each="b : ${books}">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden book-card transition-hover">
+                <div class="book-card-image">
+                    <a th:href="@{/textbooks/{id}(id=${b.id})}" class="d-block w-100 h-100 text-decoration-none">
+                        <img th:if="${b.coverImageUrl != null and !#strings.isEmpty(b.coverImageUrl)}"
+                             th:src="${b.coverImageUrl}"
+                             th:alt="${b.title}"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
+                        <div class="book-placeholder"
+                             th:if="${b.coverImageUrl == null or #strings.isEmpty(b.coverImageUrl)}">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            <span>Giáo trình</span>
+                        </div>
+                    </a>
+                    <span class="badge bg-primary position-absolute top-0 end-0 m-2" th:text="${b.bookType}">Giáo trình</span>
+                </div>
+                <div class="card-body p-3 d-flex flex-column">
+                    <div class="small text-muted mb-1" th:text="${b.category}">Chuyên ngành</div>
+                    <h6 class="fw-bold text-dark text-truncate-2 mb-1" style="min-height: 2.8em;">
+                        <a th:href="@{/textbooks/{id}(id=${b.id})}"
+                           th:text="${b.title}"
+                           class="text-decoration-none text-dark"></a>
+                    </h6>
+                    <div class="small text-muted mb-2 text-truncate" th:text="${b.author}">Tác giả</div>
+
+                    <!-- Associated University / Course Badges -->
+                    <div class="mb-2" th:if="${bookCoursesMap != null and bookCoursesMap[b.id] != null and !bookCoursesMap[b.id].isEmpty()}">
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 me-1 mb-1"
+                              th:each="cb : ${bookCoursesMap[b.id]}"
+                              th:text="${cb.course.program.institution.shortName + ' • ' + (cb.course.courseCode ?: cb.course.name)}"
+                              style="font-size: 0.7rem;"></span>
+                    </div>
+
+                    <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark border small" th:text="${b.language}">Tiếng Việt</span>
+                        <a th:href="@{/textbooks/{id}(id=${b.id})}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                            Xem chi tiết &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${books.isEmpty()}" class="card border-0 shadow-sm rounded-4 p-5 text-center my-4">
+        <div class="py-4">
+            <i class="fa-solid fa-book-bookmark fa-4x text-muted opacity-50 mb-3"></i>
+            <h5 class="fw-bold">Chưa tìm thấy giáo trình phù hợp với bộ lọc</h5>
+            <p class="text-muted small">Hãy thử chọn lại trường đại học, ngành đào tạo hoặc tìm kiếm bằng từ khóa khác.</p>
+            <a th:href="@{/textbooks}" class="btn btn-outline-primary btn-sm rounded-pill px-4">Xem tất cả giáo trình</a>
+        </div>
+    </div>
+
+    <!-- Complete Pagination -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top gap-3" th:if="${books.totalPages > 1}">
+        <span class="text-muted small">
+            Trang <strong th:text="${books.number + 1}"></strong> / <strong th:text="${books.totalPages}"></strong>
+            (Tổng cộng <strong th:text="${books.totalElements}"></strong> giáo trình)
+        </span>
+        <div class="bl-pagination">
+            <!-- Previous -->
+            <a th:if="${books.hasPrevious()}"
+               th:href="@{/textbooks(page=${books.number - 1}, institutionId=${selectedInstitutionId}, campusId=${selectedCampusId}, programId=${selectedProgramId}, courseId=${selectedCourseId}, category=${selectedCategory}, keyword=${keyword})}"
+               class="page-btn">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <span th:unless="${books.hasPrevious()}" class="page-btn disabled">
+                <i class="fa-solid fa-chevron-left"></i>
+            </span>
+
+            <!-- Page numbers (Page 1, 2, 3...) -->
+            <th:block th:each="i : ${#numbers.sequence(0, books.totalPages - 1)}">
+                <a th:if="${i != books.number}"
+                   th:href="@{/textbooks(page=${i}, institutionId=${selectedInstitutionId}, campusId=${selectedCampusId}, programId=${selectedProgramId}, courseId=${selectedCourseId}, category=${selectedCategory}, keyword=${keyword})}"
+                   class="page-btn" th:text="${i + 1}">1</a>
+                <span th:if="${i == books.number}" class="page-btn active"
+                      th:text="${i + 1}">1</span>
+            </th:block>
+
+            <!-- Next -->
+            <a th:if="${books.hasNext()}"
+               th:href="@{/textbooks(page=${books.number + 1}, institutionId=${selectedInstitutionId}, campusId=${selectedCampusId}, programId=${selectedProgramId}, courseId=${selectedCourseId}, category=${selectedCategory}, keyword=${keyword})}"
+               class="page-btn">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+            <span th:unless="${books.hasNext()}" class="page-btn disabled">
+                <i class="fa-solid fa-chevron-right"></i>
+            </span>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout/layout :: footer}"></footer>
+<th:block th:replace="~{layout/layout :: scripts}"></th:block>
+</body>
+</html>
+

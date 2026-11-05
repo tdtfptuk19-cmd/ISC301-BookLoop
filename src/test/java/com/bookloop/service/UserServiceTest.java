@@ -34,10 +34,22 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @Autowired
+    private com.bookloop.repository.CartRepository cartRepository;
+
+    @Autowired
+    private com.bookloop.repository.PromotionPaymentRepository promotionPaymentRepository;
+
+    @Autowired
+    private com.bookloop.repository.ProductRepository productRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        cartRepository.deleteAll();
+        promotionPaymentRepository.deleteAll();
+        productRepository.deleteAll();
         userRepository.deleteAll();
     }
 

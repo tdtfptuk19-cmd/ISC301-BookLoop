@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/layout :: head('Register')}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Đăng ký tài khoản')}"></head>
 <body>
 <nav th:replace="~{layout/layout :: navbar}"></nav>
 
@@ -17,13 +17,13 @@
                         📚
                     </div>
                 </div>
-                <h1 class="section-title">Create your BookLoop account</h1>
-                <p class="text-muted">Join thousands of students buying and selling textbooks.</p>
+                <h1 class="section-title">Tạo tài khoản BookLoop</h1>
+                <p class="text-muted">Cộng đồng sinh viên mua bán giáo trình cũ tiết kiệm và uy tín.</p>
             </div>
 
-            <div class="bl-form-card">
+            <div class="bl-form-card shadow-sm">
 
-                <!-- Success message (redirect from elsewhere) -->
+                <!-- Success message -->
                 <div th:if="${successMessage}" class="alert-success-bl alert-auto-dismiss mb-4">
                     <i class="fa-solid fa-circle-check"></i>
                     <span th:text="${successMessage}"></span>
@@ -31,15 +31,14 @@
 
                 <form th:action="@{/register}" method="post" th:object="${registrationForm}"
                       id="registerForm" novalidate>
-                    <!-- CSRF token is handled automatically by Thymeleaf's th:action -->
 
                     <!-- Full Name -->
                     <div class="bl-form-group">
-                        <label for="fullName">Full Name <span class="text-danger">*</span></label>
+                        <label for="fullName" class="fw-semibold">Họ và tên <span class="text-danger">*</span></label>
                         <input type="text" id="fullName" th:field="*{fullName}"
                                class="bl-form-control"
                                th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
-                               placeholder="Your full name" autocomplete="name"/>
+                               placeholder="VD: Nguyễn Văn A" autocomplete="name"/>
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('fullName')}">
                             <i class="fa-solid fa-triangle-exclamation me-1"></i>
                             <span th:errors="*{fullName}"></span>
@@ -48,52 +47,52 @@
 
                     <!-- Email -->
                     <div class="bl-form-group">
-                        <label for="email">Student Email <span class="text-danger">*</span></label>
+                        <label for="email" class="fw-semibold">Email sinh viên / Email liên hệ <span class="text-danger">*</span></label>
                         <input type="email" id="email" th:field="*{email}"
                                class="bl-form-control"
                                th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
-                               placeholder="your.email@university.edu" autocomplete="email"/>
+                               placeholder="VD: student@fpt.edu.vn" autocomplete="email"/>
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('email')}">
                             <i class="fa-solid fa-triangle-exclamation me-1"></i>
                             <span th:errors="*{email}"></span>
                         </div>
                     </div>
 
-                    <!-- University and Campus (2 columns) -->
+                    <!-- University and Campus -->
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <div class="bl-form-group mb-0">
-                                <label for="university">University</label>
+                                <label for="university" class="fw-semibold">Trường Đại học</label>
                                 <input type="text" id="university" th:field="*{university}"
                                        class="bl-form-control"
-                                       placeholder="e.g. State University" autocomplete="organization"/>
+                                       placeholder="VD: ĐH FPT, ĐHQGHN, AOF..." autocomplete="organization"/>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="bl-form-group mb-0">
-                                <label for="campus">Campus / Location</label>
+                                <label for="campus" class="fw-semibold">Khu vực / Cơ sở</label>
                                 <input type="text" id="campus" th:field="*{campus}"
                                        class="bl-form-control"
-                                       placeholder="e.g. Main Campus"/>
+                                       placeholder="VD: Hòa Lạc Campus, KTX VNU..."/>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Phone (optional) -->
+                    <!-- Phone -->
                     <div class="bl-form-group mt-3">
-                        <label for="phone">Phone <span class="text-muted small">(optional)</span></label>
+                        <label for="phone" class="fw-semibold">Số điện thoại / Zalo <span class="text-muted small fw-normal">(tùy chọn)</span></label>
                         <input type="tel" id="phone" th:field="*{phone}"
                                class="bl-form-control"
-                               placeholder="+1 555 0100" autocomplete="tel"/>
+                               placeholder="VD: 0987654321" autocomplete="tel"/>
                     </div>
 
                     <!-- Password -->
                     <div class="bl-form-group">
-                        <label for="password">Password <span class="text-danger">*</span></label>
+                        <label for="password" class="fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
                         <input type="password" id="password" th:field="*{password}"
                                class="bl-form-control"
                                th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
-                               placeholder="Minimum 8 characters" autocomplete="new-password"/>
+                               placeholder="Tối thiểu 8 ký tự" autocomplete="new-password"/>
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('password')}">
                             <i class="fa-solid fa-triangle-exclamation me-1"></i>
                             <span th:errors="*{password}"></span>
@@ -102,11 +101,11 @@
 
                     <!-- Confirm Password -->
                     <div class="bl-form-group">
-                        <label for="confirmPassword">Confirm Password <span class="text-danger">*</span></label>
+                        <label for="confirmPassword" class="fw-semibold">Xác nhận mật khẩu <span class="text-danger">*</span></label>
                         <input type="password" id="confirmPassword" th:field="*{confirmPassword}"
                                class="bl-form-control"
                                th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid' : ''"
-                               placeholder="Repeat your password" autocomplete="new-password"/>
+                               placeholder="Nhập lại mật khẩu ở trên" autocomplete="new-password"/>
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('confirmPassword')}">
                             <i class="fa-solid fa-triangle-exclamation me-1"></i>
                             <span th:errors="*{confirmPassword}"></span>
@@ -117,14 +116,14 @@
                     <button type="submit" id="registerBtn"
                             class="btn-primary-bl w-100 justify-content-center mt-2"
                             style="padding: 0.75rem 1.5rem; font-size: 1rem;">
-                        <i class="fa-solid fa-user-plus me-2"></i>Create Account
+                        <i class="fa-solid fa-user-plus me-2"></i>Đăng ký tài khoản
                     </button>
                 </form>
 
                 <!-- Login link -->
                 <p class="text-center mt-4 text-muted" style="font-size:0.875rem;">
-                    Already have an account?
-                    <a th:href="@{/login}" style="font-weight:600;">Sign in here</a>
+                    Đã có tài khoản BookLoop?
+                    <a th:href="@{/login}" class="fw-bold text-primary">Đăng nhập tại đây</a>
                 </p>
             </div>
         </div>

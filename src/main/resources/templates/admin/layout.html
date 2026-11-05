@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!--
+  BookLoop Admin — Shared admin layout.
+  Pages include the sidebar and content fragments from this layout.
+-->
+
+<!-- Admin head fragment -->
+<head th:fragment="adminHead(pageTitle)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${pageTitle} + ' | BookLoop Admin'">BookLoop Admin</title>
+
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+          crossorigin="anonymous"/>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+    <!-- BookLoop custom stylesheet -->
+    <link rel="stylesheet" th:href="@{/css/bookloop.css}"/>
+
+    <style>
+        :root {
+            --admin-sidebar-width: 260px;
+            --admin-bg: #f0f4f8;
+            --admin-sidebar-bg: #1a1f2e;
+            --admin-sidebar-text: #c9d1e0;
+            --admin-sidebar-active: #4f8ef7;
+            --admin-sidebar-hover: rgba(79,142,247,0.1);
+        }
+        body { background: var(--admin-bg); font-family: 'Inter', sans-serif; }
+        .admin-wrapper { display: flex; min-height: 100vh; }
+        /* Sidebar */
+        .admin-sidebar {
+            width: var(--admin-sidebar-width);
+            background: var(--admin-sidebar-bg);
+            color: var(--admin-sidebar-text);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .admin-sidebar .brand {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .admin-sidebar .brand a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .admin-sidebar .brand .brand-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, #4f8ef7, #7c5cf6);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; color: #fff; font-weight: 800;
+        }
+        .admin-sidebar .brand-subtitle {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 400;
+            opacity: 0.6;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .admin-nav { padding: 1rem 0; flex: 1; }
+        .admin-nav .nav-section-label {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            opacity: 0.45;
+            color: #fff;
+        }
+        .admin-nav a.nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 1.25rem;
+            color: var(--admin-sidebar-text);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0;
+            transition: background 0.15s, color 0.15s;
+        }
+        .admin-nav a.nav-link:hover {
+            background: var(--admin-sidebar-hover);
+            color: #fff;
+        }
+        .admin-nav a.nav-link.active {
+            background: rgba(79,142,247,0.15);
+            color: var(--admin-sidebar-active);
+            border-right: 3px solid var(--admin-sidebar-active);
+        }
+        .admin-nav a.nav-link .nav-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.75;
+        }
+        .admin-nav a.nav-link.active .nav-icon { opacity: 1; }
+        .admin-sidebar-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        /* Main content */
+        .admin-main {
+            margin-left: var(--admin-sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .admin-topbar {
+            background: #fff;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #e5e9f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+        .admin-topbar .page-heading {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1a1f2e;
+        }
+        .admin-topbar .admin-badge {
+            background: linear-gradient(135deg, #4f8ef7, #7c5cf6);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .admin-content { padding: 1.5rem; flex: 1; }
+        /* Cards */
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid #e5e9f0;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        .stat-card .stat-icon {
+            width: 44px; height: 44px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .admin-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e9f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .admin-card .card-header {
+            background: transparent;
+            border-bottom: 1px solid #e5e9f0;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            font-weight: 600;
+            border-bottom: 2px solid #e5e9f0;
+        }
+        .badge-status { font-size: 0.7rem; padding: 0.3em 0.6em; border-radius: 6px; }
+        @media (max-width: 768px) {
+            .admin-sidebar { transform: translateX(-100%); }
+            .admin-main { margin-left: 0; }
+        }
+    </style>
+</head>
+
+<!-- Admin sidebar fragment -->
+<div th:fragment="sidebar(currentPage)" class="admin-sidebar">
+    <div class="brand">
+        <a th:href="@{/admin/dashboard}">
+            <div class="brand-icon">B</div>
+            <div>
+                BookLoop
+                <span class="brand-subtitle">Admin Panel</span>
+            </div>
+        </a>
+    </div>
+
+    <nav class="admin-nav">
+        <div class="nav-section-label">Tổng quan</div>
+        <a th:href="@{/admin/dashboard}"
+           th:classappend="${currentPage == 'dashboard'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+            Bảng điều khiển
+        </a>
+
+        <div class="nav-section-label mt-2">Dịch vụ &amp; Doanh thu</div>
+        <a th:href="@{/admin/finance}"
+           th:classappend="${currentPage == 'finance-overview'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+            Tổng quan tài chính
+        </a>
+        <a th:href="@{/admin/finance/payments}"
+           th:classappend="${currentPage == 'finance-payments'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-credit-card"></i></span>
+            Giao dịch thanh toán
+        </a>
+        <a th:href="@{/admin/finance/payouts}"
+           th:classappend="${currentPage == 'finance-payouts'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+            Chi trả người bán
+        </a>
+        <a th:href="@{/admin/finance/commissions}"
+           th:classappend="${currentPage == 'finance-commissions'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-percent"></i></span>
+            Thu phí hoa hồng
+        </a>
+        <a th:href="@{/admin/finance/refunds}"
+           th:classappend="${currentPage == 'finance-refunds'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-rotate-left"></i></span>
+            Hoàn tiền người mua
+        </a>
+        <a th:href="@{/admin/finance/disputes}"
+           th:classappend="${currentPage == 'finance-disputes'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-shield-halved"></i></span>
+            Tranh chấp &amp; Khiếu nại
+        </a>
+        <a th:href="@{/admin/finance/reconciliation}"
+           th:classappend="${currentPage == 'finance-recon'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-scale-balanced"></i></span>
+            Đối soát tài chính
+        </a>
+        <a th:href="@{/admin/finance/audit-logs}"
+           th:classappend="${currentPage == 'finance-audit'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+            Nhật ký kiểm toán ví
+        </a>
+        <a th:href="@{/admin/promotion-payments}"
+           th:classappend="${currentPage == 'promotions'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-money-check-dollar"></i></span>
+            Duyệt phí quảng cáo
+        </a>
+        <a th:href="@{/admin/fee-settings}"
+           th:classappend="${currentPage == 'fee-settings'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-gear"></i></span>
+            Cài đặt phí đăng tin
+        </a>
+
+        <div class="nav-section-label mt-2">Quản lý chợ</div>
+        <a th:href="@{/admin/users}"
+           th:classappend="${currentPage == 'users'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+            Người dùng
+        </a>
+        <a th:href="@{/admin/listings}"
+           th:classappend="${currentPage == 'listings'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-book"></i></span>
+            Tin đăng bán sách
+        </a>
+        <a th:href="@{/admin/orders}"
+           th:classappend="${currentPage == 'orders'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-receipt"></i></span>
+            Đơn hàng
+        </a>
+        <a th:href="@{/admin/reviews}"
+           th:classappend="${currentPage == 'reviews'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-star"></i></span>
+            Đánh giá
+        </a>
+        <a th:href="@{/admin/reports}"
+           th:classappend="${currentPage == 'reports'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-flag"></i></span>
+            Báo cáo vi phạm
+        </a>
+
+        <div class="nav-section-label mt-2">Kiểm toán</div>
+        <a th:href="@{/admin/logs}"
+           th:classappend="${currentPage == 'logs'} ? 'active' : ''"
+           class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+            Nhật ký hoạt động
+        </a>
+
+        <div class="nav-section-label mt-2">Điều hướng</div>
+        <a th:href="@{/}" class="nav-link">
+            <span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span>
+            Về Chợ BookLoop
+        </a>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="nav-link w-100 text-start border-0 bg-transparent"
+                    style="color: #ef4444; cursor: pointer;">
+                <span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+                Đăng xuất
+            </button>
+        </form>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+        Signed in as <span sec:authentication="name" class="fw-600"></span>
+    </div>
+</div>
+
+<!-- Admin scripts fragment -->
+<th:block th:fragment="adminScripts">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+    <script th:src="@{/js/bookloop.js}"></script>
+</th:block>
+
+</html>
+

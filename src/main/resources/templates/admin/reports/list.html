@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Reports')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('reports')}"></div>
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-flag me-2 text-danger"></i>Reports &amp; Moderation</div>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <div class="admin-content">
+
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Filter -->
+            <div class="admin-card mb-4">
+                <div class="card-header">Filter by Status</div>
+                <div class="p-3">
+                    <form th:action="@{/admin/reports}" method="get" class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-600">Report Status</label>
+                            <select name="status" class="form-select form-select-sm">
+                                <option value="">All Statuses</option>
+                                <option th:each="s : ${reportStatuses}" th:value="${s.name()}"
+                                        th:text="${s.name()}"
+                                        th:selected="${selectedStatus == s.name()}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="fa-solid fa-filter me-1"></i>Filter
+                            </button>
+                            <a th:href="@{/admin/reports}" class="btn btn-outline-secondary btn-sm">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="card-header">
+                    All Reports
+                    <span class="badge bg-primary ms-1" th:text="${reports.totalElements}"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">ID</th>
+                                <th>Reporter</th>
+                                <th>Target Item / User</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${reports.isEmpty()}">
+                                <td colspan="7" class="text-center text-muted py-4">No reports found.</td>
+                            </tr>
+                            <tr th:each="rep : ${reports}">
+                                <td class="ps-3 text-muted small" th:text="${rep.id}"></td>
+                                <td class="small" th:text="${rep.reporter.fullName}"></td>
+                                <td class="small">
+                                    <span th:if="${rep.reportedProduct != null}">
+                                        <i class="fa-solid fa-book text-muted me-1"></i>
+                                        <a th:href="@{/admin/listings/{id}(id=${rep.reportedProduct.id})}"
+                                           th:text="${#strings.abbreviate(rep.reportedProduct.title, 25)}"
+                                           class="text-decoration-none"></a>
+                                    </span>
+                                    <span th:if="${rep.reportedProduct == null and rep.reportedUser != null}">
+                                        <i class="fa-solid fa-user text-muted me-1"></i>
+                                        <a th:href="@{/admin/users/{id}(id=${rep.reportedUser.id})}"
+                                           th:text="${rep.reportedUser.fullName}"
+                                           class="text-decoration-none"></a>
+                                    </span>
+                                </td>
+                                <td class="small" th:text="${#strings.abbreviate(rep.reason, 30)}"></td>
+                                <td>
+                                    <span th:text="${rep.status.name()}"
+                                          th:classappend="${rep.status.name() == 'PENDING'} ? 'badge bg-warning text-dark' : (${rep.status.name() == 'RESOLVED'} ? 'badge bg-success' : (${rep.status.name() == 'REJECTED'} ? 'badge bg-danger' : 'badge bg-info'))"
+                                          class="badge-status"></span>
+                                </td>
+                                <td class="text-muted small"
+                                    th:text="${#temporals.format(rep.createdAt, 'MMM d, yyyy')}"></td>
+                                <td>
+                                    <a th:href="@{/admin/reports/{id}(id=${rep.id})}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="p-3 d-flex justify-content-between align-items-center border-top" th:if="${reports.totalPages > 1}">
+                    <small class="text-muted">
+                        Page <span th:text="${reports.number + 1}"></span> of <span th:text="${reports.totalPages}"></span>
+                    </small>
+                    <div class="btn-group btn-group-sm">
+                        <a th:href="@{/admin/reports(page=${reports.number - 1}, status=${selectedStatus})}"
+                           th:classappend="${!reports.hasPreviousPage()} ? 'disabled' : ''"
+                           class="btn btn-outline-secondary"><i class="fa-solid fa-chevron-left"></i></a>
+                        <a th:href="@{/admin/reports(page=${reports.number + 1}, status=${selectedStatus})}"
+                           th:classappend="${!reports.hasNextPage()} ? 'disabled' : ''"
+                           class="btn btn-outline-secondary"><i class="fa-solid fa-chevron-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+</body>
+</html>
+

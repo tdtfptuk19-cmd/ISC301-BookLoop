@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Đối soát tài chính')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('finance-recon')}"></div>
+
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-scale-balanced me-2 text-warning"></i>Báo cáo Đối soát tài chính (Reconciliation Report)</div>
+            <span class="admin-badge">Admin Finance</span>
+        </div>
+
+        <div class="admin-content">
+
+            <!-- Mock Payment Gateway Environment Notice Banner -->
+            <div class="alert alert-secondary border d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-dark px-3 py-2 me-3 fs-6 font-monospace">
+                        <i class="fa-solid fa-flask me-1 text-warning"></i>DEMO / MOCK GATEWAY
+                    </span>
+                    <div>
+                        <strong class="text-dark">Hệ thống Cổng Thanh Toán Giả Lập &amp; Tự Động Đối Soát</strong>
+                        <div class="small text-muted">
+                            Mô phỏng đầy đủ luồng đối soát ba bên: <strong>Người mua &rarr; Quỹ Tạm Giữ (Escrow) &rarr; Hoa hồng Sàn &rarr; Giải ngân Người bán &rarr; Ngân hàng</strong>.
+                        </div>
+                    </div>
+                </div>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2">
+                    <i class="fa-solid fa-circle-check me-1"></i>Audit Engine Active
+                </span>
+            </div>
+
+            <!-- Report summary banner -->
+            <div class="stat-card mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <h4 class="fw-bold mb-1 text-dark">Kết quả đối soát số dư toàn hệ thống</h4>
+                        <div class="text-muted small">
+                            Thời điểm chạy: <strong th:text="${#temporals.format(report.runAt, 'dd/MM/yyyy HH:mm:ss')}">00:00:00</strong>
+                            &bull; Tổng doanh số rà soát: <strong class="text-primary" th:text="${@formatUtils.formatVnd(report.totalGmvChecked)}">0 ₫</strong>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/admin/finance/reconciliation}" class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-rotate me-1"></i>Chạy lại đối soát ngay
+                        </a>
+                        <a th:href="@{/admin/finance/reconciliation/export(status=${selectedStatus},keyword=${keyword})}"
+                           class="btn btn-outline-success btn-sm">
+                            <i class="fa-solid fa-file-csv me-1"></i>Xuất file CSV (Excel)
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Status Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-primary">
+                        <div class="stat-value fs-4 text-primary fw-bold" th:text="${report.totalOrdersChecked}">0</div>
+                        <div class="stat-label">Tổng đơn hàng rà soát</div>
+                        <div class="small text-muted mt-1" style="font-size:0.75rem;">Bao gồm tất cả đơn hàng C2C trên sàn</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-success">
+                        <div class="stat-value fs-4 text-success fw-bold" th:text="${report.matchedCount}">0</div>
+                        <div class="stat-label">Khớp hoàn toàn (Matched)</div>
+                        <div class="small text-muted mt-1" style="font-size:0.75rem;">Dòng tiền và công thức chuẩn 100%</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-info">
+                        <div class="stat-value fs-4 text-info fw-bold" th:text="${report.pendingCount}">0</div>
+                        <div class="stat-label">Chờ xử lý / Tạm giữ (Escrow)</div>
+                        <div class="small text-muted mt-1" style="font-size:0.75rem;">Đang giao hàng hoặc chờ giải ngân</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-danger">
+                        <div class="stat-value fs-4 fw-bold"
+                             th:classappend="${report.mismatchCount == 0 and report.missingDataCount == 0 and report.errorCount == 0} ? 'text-success' : 'text-danger'"
+                             th:text="${report.mismatchCount + report.missingDataCount + report.errorCount}">0</div>
+                        <div class="stat-label">Sai lệch / Lỗi cần can thiệp</div>
+                        <div class="small text-muted mt-1" style="font-size:0.75rem;">
+                            Sai lệch: <strong th:text="${report.mismatchCount}">0</strong> &bull; Thiếu dữ liệu: <strong th:text="${report.missingDataCount}">0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Toolbar -->
+            <div class="stat-card mb-4 p-3 shadow-sm">
+                <form th:action="@{/admin/finance/reconciliation}" method="get" class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Tìm kiếm đơn / mã giao dịch</label>
+                        <input type="text" name="keyword" th:value="${keyword}"
+                               class="form-control form-control-sm"
+                               placeholder="Mã đơn hàng, mã giao dịch cổng, từ khóa ghi chú..."/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Trạng thái đối soát</label>
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">-- Tất cả trạng thái đối soát --</option>
+                            <option th:each="st : ${statuses}"
+                                    th:value="${st.name()}"
+                                    th:text="${st.displayName}"
+                                    th:selected="${selectedStatus == st.name()}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="fa-solid fa-magnifying-glass me-1"></i>Lọc dữ liệu
+                        </button>
+                        <a th:href="@{/admin/finance/reconciliation}" class="btn btn-outline-secondary btn-sm" title="Đặt lại bộ lọc">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Detailed Reconciliation Table -->
+            <div class="stat-card mb-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-list-check me-2 text-primary"></i>Chi tiết đối soát từng giao dịch &amp; đơn hàng
+                    </h5>
+                    <span class="badge bg-primary" th:text="${#lists.size(reconciliationItems)} + ' bản ghi'"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0" style="font-size: 0.88rem;">
+                        <thead class="table-light">
+                            <tr class="text-uppercase small text-muted">
+                                <th>Mã đơn</th>
+                                <th>GD Cổng (Mock)</th>
+                                <th>Phương thức</th>
+                                <th class="text-end">Giá trị đơn</th>
+                                <th class="text-end">Đã TT Cổng</th>
+                                <th class="text-end">Hoa hồng</th>
+                                <th class="text-end">Giải ngân</th>
+                                <th class="text-end">Chênh lệch</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th>Ghi chú kiểm toán</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(reconciliationItems)}">
+                                <td colspan="10" class="text-center py-4 text-muted">
+                                    <i class="fa-solid fa-inbox fs-3 d-block mb-2 text-muted"></i>
+                                    Không có giao dịch nào phù hợp với bộ lọc hiện tại.
+                                </td>
+                            </tr>
+                            <tr th:each="it : ${reconciliationItems}">
+                                <td>
+                                    <a th:href="@{/admin/orders(keyword=${it.orderNumber})}"
+                                       class="font-monospace fw-bold text-primary text-decoration-none"
+                                       th:text="${it.orderNumber}">ORD-XXXX</a>
+                                </td>
+                                <td>
+                                    <span class="font-monospace small text-dark d-block" th:text="${it.providerReference}">MOCK-TXN-1</span>
+                                    <span class="badge bg-secondary text-white" style="font-size:0.65rem;">DEMO MOCK</span>
+                                </td>
+                                <td>
+                                    <span class="small text-muted" th:text="${it.paymentMethod}">HOLDING</span>
+                                </td>
+                                <td class="text-end fw-bold text-dark" th:text="${@formatUtils.formatVnd(it.orderGrossAmount)}">0 ₫</td>
+                                <td class="text-end fw-semibold text-primary" th:text="${@formatUtils.formatVnd(it.paymentAmount)}">0 ₫</td>
+                                <td class="text-end text-info fw-semibold" th:text="${@formatUtils.formatVnd(it.commissionAmount)}">0 ₫</td>
+                                <td class="text-end text-success fw-semibold" th:text="${@formatUtils.formatVnd(it.payoutAmount)}">0 ₫</td>
+                                <td class="text-end fw-bold"
+                                    th:classappend="${it.discrepancyAmount.compareTo(T(java.math.BigDecimal).ZERO) != 0} ? 'text-danger' : 'text-muted'"
+                                    th:text="${@formatUtils.formatVnd(it.discrepancyAmount)}">0 ₫</td>
+                                <td class="text-center">
+                                    <span class="badge" th:classappend="${it.status.badgeClass}"
+                                          th:text="${it.status.displayName}">MATCHED</span>
+                                </td>
+                                <td class="small" th:text="${it.notes}">Khớp 100%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Discrepancy Warnings Table -->
+            <div class="stat-card shadow-sm" th:if="${report.discrepancyCount > 0}">
+                <h5 class="fw-bold mb-3 text-danger">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Chi tiết các điểm cảnh báo bất thường (<span th:text="${report.discrepancyCount}">0</span>)
+                </h5>
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-muted">
+                                <th>Quy tắc đối soát</th>
+                                <th>Mã đối chiếu</th>
+                                <th>Mức độ</th>
+                                <th>Mô tả chi tiết sai lệch</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item : ${report.discrepancies}">
+                                <td class="font-monospace fw-bold text-dark small" th:text="${item.rule}">RULE_NAME</td>
+                                <td class="small" th:text="${item.reference}">ORD-XXXX</td>
+                                <td>
+                                    <span class="badge" th:classappend="${item.severity == 'HIGH'} ? 'bg-danger' : 'bg-warning text-dark'"
+                                          th:text="${item.severity}">HIGH</span>
+                                </td>
+                                <td class="small text-danger" th:text="${item.description}">Mô tả chi tiết sai lệch</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{admin/layout :: adminScripts}"></th:block>
+</body>
+</html>

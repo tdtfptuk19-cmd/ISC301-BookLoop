@@ -1,5 +1,8 @@
 package com.bookloop.controller;
 
+import com.bookloop.entity.Role;
+import com.bookloop.entity.User;
+import com.bookloop.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Integration tests for security rules — verifying that public pages are accessible
- * and protected pages redirect to login.
+ * and protected pages (including Cart, Checkout, and Orders) redirect to login.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -22,6 +25,9 @@ class SecurityIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // --- Public pages ---
 
@@ -50,6 +56,20 @@ class SecurityIntegrationTest {
     @DisplayName("Registration page is accessible without authentication")
     void registerPage_public() throws Exception {
         mockMvc.perform(get("/register"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Public seller profile is accessible without authentication")
+    void sellerProfile_public() throws Exception {
+        User seller = new User();
+        seller.setFullName("Public Seller");
+        seller.setEmail("publicseller@example.com");
+        seller.setPassword("password123");
+        seller.setRole(Role.STUDENT);
+        userRepository.save(seller);
+
+        mockMvc.perform(get("/profile/seller/" + seller.getId()))
                 .andExpect(status().isOk());
     }
 
@@ -83,6 +103,38 @@ class SecurityIntegrationTest {
     @DisplayName("Edit listing page requires authentication")
     void editListing_requiresAuth() throws Exception {
         mockMvc.perform(get("/my-listings/1/edit"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+    }
+
+    @Test
+    @DisplayName("Shopping Cart page requires authentication")
+    void cartPage_requiresAuth() throws Exception {
+        mockMvc.perform(get("/cart"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+    }
+
+    @Test
+    @DisplayName("Checkout page requires authentication")
+    void checkoutPage_requiresAuth() throws Exception {
+        mockMvc.perform(get("/checkout"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+    }
+
+    @Test
+    @DisplayName("My Purchases page requires authentication")
+    void myPurchasesPage_requiresAuth() throws Exception {
+        mockMvc.perform(get("/orders/my-purchases"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+    }
+
+    @Test
+    @DisplayName("My Sales page requires authentication")
+    void mySalesPage_requiresAuth() throws Exception {
+        mockMvc.perform(get("/orders/my-sales"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("**/login"));
     }

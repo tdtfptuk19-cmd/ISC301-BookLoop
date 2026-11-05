@@ -14,7 +14,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
  * Spring Security configuration for BookLoop.
- * Uses modern lambda-style configuration (not the deprecated WebSecurityConfigurerAdapter).
+ * Uses modern lambda-style configuration.
  */
 @Configuration
 @EnableWebSecurity
@@ -28,7 +28,6 @@ public class SecurityConfig {
 
     /**
      * BCrypt password encoder bean.
-     * Used throughout the application to hash and verify passwords.
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -47,28 +46,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/webhooks/**")
+            )
             // Authorization rules
             .authorizeHttpRequests(auth -> auth
-                // Public pages: static assets, home, listings, login, registration
+                // Public pages: static assets, home, listings, public seller profile, login, registration, payment webhooks
                 .requestMatchers(
                         "/",
                         "/books",
                         "/books/**",
+                        "/textbooks",
+                        "/textbooks/**",
+                        "/profile/seller/**",
                         "/register",
                         "/css/**",
                         "/js/**",
                         "/images/**",
                         "/webjars/**",
-                        "/error"
+                        "/error",
+                        "/api/webhooks/**"
                 ).permitAll()
-                // Everything else requires authentication
+                // Admin pages: require ADMIN role
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // Protected pages: cart, checkout, orders, reviews, profile, listings CRUD, seller finance, buyer payment
                 .anyRequest().authenticated()
             )
             // Form login configuration
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/", true)
+                .defaultSuccessUrl("/", false)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
@@ -80,8 +88,7 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             )
-            // CSRF is enabled by default — we do NOT disable it
-            // Thymeleaf automatically includes the CSRF token in forms via th:action
+            // CSRF is enabled by default
             .userDetailsService(userDetailsService);
 
         return http.build();

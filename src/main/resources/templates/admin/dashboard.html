@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{admin/layout :: adminHead('Bảng điều khiển quản trị')}"></head>
+<body>
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <div th:replace="~{admin/layout :: sidebar('dashboard')}"></div>
+
+    <!-- Main content -->
+    <main class="admin-main">
+        <!-- Topbar -->
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-gauge-high me-2 text-primary"></i>Bảng điều khiển tổng quan</div>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+
+        <div class="admin-content">
+
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Summary Stats Row -->
+            <div class="row g-3 mb-4">
+                <!-- Total Users -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-primary" th:text="${stats.totalUsers}">0</div>
+                            <div class="stat-label">Tổng người dùng</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Active Users -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-success" th:text="${stats.activeUsers}">0</div>
+                            <div class="stat-label">Đang hoạt động</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Listings -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info">
+                            <i class="fa-solid fa-book"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-info" th:text="${stats.totalListings}">0</div>
+                            <div class="stat-label">Tổng tin đăng</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Available Listings -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-warning" th:text="${stats.availableListings}">0</div>
+                            <div class="stat-label">Sách đang bán</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Orders -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-primary" th:text="${stats.totalOrders}">0</div>
+                            <div class="stat-label">Tổng đơn hàng</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Completed Orders -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-success" th:text="${stats.completedOrders}">0</div>
+                            <div class="stat-label">Đơn hoàn thành</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Pending Reports -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                            <i class="fa-solid fa-flag"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-danger" th:text="${stats.pendingReports}">0</div>
+                            <div class="stat-label">Báo cáo chờ duyệt</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Reviews -->
+                <div class="col-6 col-md-3">
+                    <div class="stat-card d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-secondary bg-opacity-10 text-secondary">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-secondary" th:text="${stats.totalReviews}">0</div>
+                            <div class="stat-label">Đánh giá sinh viên</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row g-3 mb-4">
+                <!-- Listing Status Distribution -->
+                <div class="col-md-6">
+                    <div class="admin-card h-100">
+                        <div class="card-header">
+                            <i class="fa-solid fa-chart-pie me-2 text-primary"></i>Phân bổ trạng thái sách
+                        </div>
+                        <div class="p-3 d-flex justify-content-center align-items-center" style="height:220px;">
+                            <canvas id="listingStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Order Status Distribution -->
+                <div class="col-md-6">
+                    <div class="admin-card h-100">
+                        <div class="card-header">
+                            <i class="fa-solid fa-chart-bar me-2 text-success"></i>Thống kê trạng thái đơn hàng
+                        </div>
+                        <div class="p-3 d-flex justify-content-center align-items-center" style="height:220px;">
+                            <canvas id="orderStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Row -->
+            <div class="row g-3">
+                <!-- Recent Users -->
+                <div class="col-md-6">
+                    <div class="admin-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-user-plus me-2 text-primary"></i>Thành viên mới đăng ký</span>
+                            <a th:href="@{/admin/users}" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                        </div>
+                        <div class="p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">Họ tên</th>
+                                        <th>Vai trò</th>
+                                        <th>Ngày tham gia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentUsers)}">
+                                        <td colspan="3" class="text-center text-muted py-3">Chưa có người dùng</td>
+                                    </tr>
+                                    <tr th:each="u : ${recentUsers}">
+                                        <td class="ps-3">
+                                            <a th:href="@{/admin/users/{id}(id=${u.id})}"
+                                               th:text="${u.fullName}"
+                                               class="text-decoration-none fw-500"></a>
+                                        </td>
+                                        <td>
+                                            <span th:text="${u.role.name()}"
+                                                  th:classappend="${u.role.name() == 'ADMIN'} ? 'badge bg-danger' : 'badge bg-secondary'"
+                                                  class="badge-status"></span>
+                                        </td>
+                                        <td class="text-muted small"
+                                            th:text="${@formatUtils.formatDate(u.createdAt)}"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Listings -->
+                <div class="col-md-6">
+                    <div class="admin-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-book me-2 text-info"></i>Tin đăng mới nhất</span>
+                            <a th:href="@{/admin/listings}" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                        </div>
+                        <div class="p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">Tiêu đề sách</th>
+                                        <th>Trạng thái</th>
+                                        <th>Giá bán</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentListings)}">
+                                        <td colspan="3" class="text-center text-muted py-3">Chưa có tin đăng</td>
+                                    </tr>
+                                    <tr th:each="p : ${recentListings}">
+                                        <td class="ps-3">
+                                            <a th:href="@{/admin/listings/{id}(id=${p.id})}"
+                                               th:text="${#strings.abbreviate(p.title, 30)}"
+                                               class="text-decoration-none fw-500"></a>
+                                        </td>
+                                        <td>
+                                            <span th:text="${p.status.displayName}"
+                                                  th:classappend="${p.status.name() == 'AVAILABLE'} ? 'badge bg-success' : (${p.status.name() == 'SOLD'} ? 'badge bg-secondary' : 'badge bg-danger')"
+                                                  class="badge-status"></span>
+                                        </td>
+                                        <td class="fw-semibold text-primary small" th:text="${@formatUtils.formatVnd(p.price)}">
+                                            0 ₫
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="col-md-6">
+                    <div class="admin-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-receipt me-2 text-success"></i>Đơn hàng gần đây</span>
+                            <a th:href="@{/admin/orders}" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                        </div>
+                        <div class="p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">Mã đơn</th>
+                                        <th>Người mua</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentOrders)}">
+                                        <td colspan="3" class="text-center text-muted py-3">Chưa có đơn hàng</td>
+                                    </tr>
+                                    <tr th:each="o : ${recentOrders}">
+                                        <td class="ps-3">
+                                            <a th:href="@{/admin/orders/{id}(id=${o.id})}"
+                                               th:text="${o.orderNumber}"
+                                               class="text-decoration-none fw-500 font-monospace" style="font-size:0.8rem;"></a>
+                                        </td>
+                                        <td class="text-muted small" th:text="${o.buyer.fullName}"></td>
+                                        <td>
+                                            <span th:text="${o.status.displayName}"
+                                                  th:classappend="${o.status.name() == 'COMPLETED'} ? 'badge bg-success' : (${o.status.name() == 'PENDING'} ? 'badge bg-warning text-dark' : (${o.status.name() == 'CANCELLED'} ? 'badge bg-danger' : 'badge bg-info'))"
+                                                  class="badge-status"></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Reports -->
+                <div class="col-md-6">
+                    <div class="admin-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-flag me-2 text-danger"></i>Báo cáo vi phạm gần đây</span>
+                            <a th:href="@{/admin/reports}" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                        </div>
+                        <div class="p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">Người báo cáo</th>
+                                        <th>Lý do</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentReports)}">
+                                        <td colspan="3" class="text-center text-muted py-3">Chưa có báo cáo vi phạm</td>
+                                    </tr>
+                                    <tr th:each="r : ${recentReports}">
+                                        <td class="ps-3">
+                                            <a th:href="@{/admin/reports/{id}(id=${r.id})}"
+                                               th:text="${r.reporter.fullName}"
+                                               class="text-decoration-none fw-500"></a>
+                                        </td>
+                                        <td class="text-muted small" th:text="${#strings.abbreviate(r.reason, 30)}"></td>
+                                        <td>
+                                            <span th:text="${r.status.displayName}"
+                                                  th:classappend="${r.status.name() == 'PENDING'} ? 'badge bg-warning text-dark' : (${r.status.name() == 'RESOLVED'} ? 'badge bg-success' : (${r.status.name() == 'REJECTED'} ? 'badge bg-danger' : 'badge bg-info'))"
+                                                  class="badge-status"></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+
+<script th:inline="javascript">
+    const availableListings = /*[[${stats.availableListings}]]*/ 0;
+    const soldListings = /*[[${stats.soldListings}]]*/ 0;
+    const hiddenListings = /*[[${stats.hiddenListings}]]*/ 0;
+    const pendingOrders = /*[[${stats.pendingOrders}]]*/ 0;
+    const completedOrders = /*[[${stats.completedOrders}]]*/ 0;
+    const totalOrders = /*[[${stats.totalOrders}]]*/ 0;
+    const confirmedOrders = totalOrders - pendingOrders - completedOrders;
+
+    // Listing status doughnut
+    new Chart(document.getElementById('listingStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Đang bán', 'Đã bán', 'Đang ẩn'],
+            datasets: [{
+                data: [availableListings, soldListings, hiddenListings],
+                backgroundColor: ['#22c55e', '#6b7280', '#ef4444'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+        }
+    });
+
+    // Order status bar
+    new Chart(document.getElementById('orderStatusChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Chờ duyệt', 'Đã xác nhận', 'Hoàn thành', 'Đã hủy'],
+            datasets: [{
+                label: 'Đơn hàng',
+                data: [pendingOrders, Math.max(0, confirmedOrders), completedOrders, Math.max(0, 0)],
+                backgroundColor: ['#f59e0b', '#3b82f6', '#22c55e', '#ef4444'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+</script>
+</body>
+</html>

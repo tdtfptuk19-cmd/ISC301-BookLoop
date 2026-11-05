@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Tranh chấp & Khiếu nại')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('finance-disputes')}"></div>
+
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-shield-halved me-2 text-warning"></i>Quản lý Tranh chấp &amp; Khiếu nại (Disputes)</div>
+            <span class="admin-badge">Admin Finance</span>
+        </div>
+
+        <div class="admin-content">
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="stat-card mb-4">
+                <form th:action="@{/admin/finance/disputes}" method="get" class="row g-3 align-items-center">
+                    <div class="col-sm-4">
+                        <label class="form-label small fw-semibold">Lọc theo trạng thái</label>
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option th:each="st : ${statuses}" th:value="${st.name()}"
+                                    th:text="${st.name()}"
+                                    th:selected="${selectedStatus != null and selectedStatus.name() == st.name()}"></option>
+                        </select>
+                    </div>
+                    <div class="col-sm-8 text-end pt-4">
+                        <span class="text-muted small">Tổng số: <strong th:text="${disputes.totalElements}">0</strong> vụ khiếu nại</span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table -->
+            <div class="stat-card">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-muted">
+                                <th>Đơn hàng</th>
+                                <th>Người khiếu nại</th>
+                                <th>Lý do</th>
+                                <th>Mô tả</th>
+                                <th>Trạng thái</th>
+                                <th>Thời gian mở</th>
+                                <th class="text-end">Xử lý</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${disputes.empty}">
+                                <td colspan="7" class="text-center py-4 text-muted">Không có khiếu nại nào.</td>
+                            </tr>
+                            <tr th:each="d : ${disputes.content}">
+                                <td>
+                                    <a th:if="${d.order != null}" th:href="@{/orders/{id}(id=${d.order.id})}"
+                                       class="text-primary fw-semibold" th:text="${d.order.orderNumber}">ORD-XXXX</a>
+                                    <div class="small text-muted" th:if="${d.order != null}" th:text="${@formatUtils.formatVnd(d.order.totalAmount)}">0 ₫</div>
+                                </td>
+                                <td>
+                                    <strong class="text-dark small d-block" th:text="${d.openedBy != null ? d.openedBy.fullName : '—'}">Người mua</strong>
+                                    <span class="text-muted small" th:text="${d.openedBy != null ? d.openedBy.email : ''}"></span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning text-dark" th:text="${d.reason}">Lý do</span>
+                                </td>
+                                <td class="small" style="max-width: 250px;">
+                                    <div class="text-truncate" th:text="${d.description}">Mô tả</div>
+                                    <a th:if="${d.evidenceUrl != null and !#strings.isEmpty(d.evidenceUrl)}"
+                                       th:href="${d.evidenceUrl}" target="_blank" class="small text-primary">
+                                        <i class="fa-solid fa-paperclip me-1"></i>Bằng chứng
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge" th:classappend="${d.status.name() == 'OPEN' or d.status.name() == 'UNDER_REVIEW'} ? 'bg-danger' : 'bg-success'"
+                                          th:text="${d.status.name()}">OPEN</span>
+                                </td>
+                                <td class="small text-muted" th:text="${#temporals.format(d.createdAt, 'dd/MM/yyyy HH:mm')}">Thời gian</td>
+                                <td class="text-end">
+                                    <div th:if="${d.status.name() == 'OPEN' or d.status.name() == 'UNDER_REVIEW'}">
+                                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" th:data-bs-target="'#resolveModal' + ${d.id}">
+                                            <i class="fa-solid fa-gavel me-1"></i>Phán quyết
+                                        </button>
+
+                                        <!-- Resolution Modal -->
+                                        <div class="modal fade text-start" th:id="'resolveModal' + ${d.id}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form th:action="@{/admin/finance/disputes/{id}/resolve(id=${d.id})}" method="post">
+                                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fw-bold">Phán quyết khiếu nại #<span th:text="${d.id}"></span></h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="small text-muted mb-3">
+                                                                Chọn phương án xử lý tranh chấp dòng tiền đang tạm giữ giữa Người mua và Người bán.
+                                                            </p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Kết luận xử lý <span class="text-danger">*</span></label>
+                                                                <select name="resolution" class="form-select" required>
+                                                                    <option value="REFUNDED_BUYER">Hoàn tiền 100% cho người mua (Chấp thuận khiếu nại)</option>
+                                                                    <option value="RESOLVED_SELLER_PAID">Giải phóng tiền cho người bán (Bác bỏ khiếu nại)</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-semibold">Ghi chú quyết định của Quản trị viên</label>
+                                                                <textarea name="adminNotes" class="form-control" rows="3" placeholder="Ghi rõ lý do đối soát và căn cứ phán quyết..."></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                                            <button type="submit" class="btn btn-primary fw-bold">Thực thi phán quyết</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span th:if="${d.status.name() != 'OPEN' and d.status.name() != 'UNDER_REVIEW'}" class="text-muted small">
+                                        Đã xử lý
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div th:if="${disputes.totalPages > 1}" class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <span class="small text-muted" th:text="'Trang ' + (${disputes.number} + 1) + ' / ' + ${disputes.totalPages}"></span>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" th:classappend="${disputes.first} ? 'disabled'">
+                            <a class="page-link" th:href="@{/admin/finance/disputes(page=${disputes.number - 1}, status=${selectedStatus})}">&laquo;</a>
+                        </li>
+                        <li class="page-item" th:classappend="${disputes.last} ? 'disabled'">
+                            <a class="page-link" th:href="@{/admin/finance/disputes(page=${disputes.number + 1}, status=${selectedStatus})}">&raquo;</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{admin/layout :: adminScripts}"></th:block>
+</body>
+</html>
+

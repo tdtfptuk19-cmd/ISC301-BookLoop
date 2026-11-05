@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/layout :: head('My Listings')}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Quản lý tin đăng của tôi')}"></head>
 <body>
 <nav th:replace="~{layout/layout :: navbar}"></nav>
 
@@ -20,54 +20,62 @@
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div>
             <h1 class="section-title mb-1">
-                <i class="fa-solid fa-list me-2" style="color:var(--color-primary);"></i>
-                My Listings
+                <i class="fa-solid fa-list me-2 text-primary"></i>
+                Tin đăng bán của tôi
             </h1>
-            <p class="text-muted mb-0" th:text="${#lists.size(listings)} + ' listing(s) total'">0 listings</p>
+            <p class="text-muted mb-0" th:text="'Tổng cộng ' + ${#lists.size(listings)} + ' tin đăng bán'">0 tin</p>
         </div>
-        <a th:href="@{/my-listings/new}" class="btn-primary-bl">
-            <i class="fa-solid fa-plus me-1"></i>New Listing
-        </a>
+        <div class="d-flex gap-2">
+            <a th:href="@{/my-listings/payments}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-receipt me-1"></i>Lịch sử nộp phí đẩy tin
+            </a>
+            <a th:href="@{/my-listings/new}" class="btn-primary-bl">
+                <i class="fa-solid fa-plus me-1"></i>Đăng bán sách mới
+            </a>
+        </div>
     </div>
 
     <!-- Listings table (desktop) / cards (mobile) -->
     <div th:if="${not #lists.isEmpty(listings)}">
 
         <!-- Desktop table -->
-        <div class="listings-table d-none d-md-block">
-            <table class="w-100" style="border-collapse: collapse;">
+        <div class="listings-table d-none d-md-block shadow-sm rounded-3 overflow-hidden bg-white">
+            <table class="w-100 mb-0" style="border-collapse: collapse;">
                 <thead>
                     <tr>
-                        <th>Book</th>
-                        <th>Condition</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                        <th>Campus</th>
-                        <th>Listed</th>
-                        <th class="text-end">Actions</th>
+                        <th>Sách &amp; Giáo trình</th>
+                        <th>Tình trạng</th>
+                        <th>Giá bán</th>
+                        <th>Trạng thái</th>
+                        <th>Độ ưu tiên</th>
+                        <th>Khu vực</th>
+                        <th>Ngày đăng</th>
+                        <th class="text-end">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:each="listing : ${listings}">
                         <td>
                             <div class="d-flex align-items-center gap-3">
-                                <div style="width:48px; height:60px; border-radius:var(--radius-md);
-                                            background:linear-gradient(135deg,#EEF2FF,#E0E7FF);
-                                            display:flex; align-items:center; justify-content:center;
-                                            flex-shrink:0; overflow:hidden;">
+                                <a th:href="@{/books/{id}(id=${listing.id})}"
+                                   style="width:48px; height:64px; border-radius:var(--radius-sm);
+                                          background:#f8fafc; border:1px solid var(--color-gray-200);
+                                          display:flex; align-items:center; justify-content:center;
+                                          flex-shrink:0; overflow:hidden; padding:2px;">
                                     <img th:if="${listing.imageUrl != null and !#strings.isEmpty(listing.imageUrl)}"
                                          th:src="${listing.imageUrl}" th:alt="${listing.title}"
-                                         style="width:100%;height:100%;object-fit:cover;"
-                                         onerror="this.style.display='none';"/>
+                                         loading="lazy"
+                                         style="max-width:100%; max-height:100%; object-fit:contain;"
+                                         onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
                                     <span th:if="${listing.imageUrl == null or #strings.isEmpty(listing.imageUrl)}"
-                                          style="font-size:1.5rem; opacity:0.35;">📖</span>
-                                </div>
+                                          class="text-muted"><i class="fa-solid fa-book-open"></i></span>
+                                </a>
                                 <div>
                                     <a th:href="@{/books/{id}(id=${listing.id})}"
-                                       style="font-weight:700; font-size:0.875rem; color:var(--color-gray-900);"
-                                       th:text="${#strings.abbreviate(listing.title, 40)}">Title</a>
+                                       class="fw-bold text-dark text-decoration-none"
+                                       th:text="${#strings.abbreviate(listing.title, 35)}">Tiêu đề</a>
                                     <div th:if="${listing.courseCode != null}"
-                                         style="font-size:0.75rem; color:var(--color-primary); font-weight:600;"
+                                         class="badge bg-light text-primary border mt-1"
                                          th:text="${listing.courseCode}"></div>
                                 </div>
                             </div>
@@ -76,28 +84,44 @@
                             <span class="badge-condition" th:classappend="${listing.condition.name()}"
                                   th:text="${listing.condition.displayName}"></span>
                         </td>
-                        <td style="font-weight:700; color:var(--color-primary);"
-                            th:text="${'$' + listing.price}">$0</td>
+                        <td class="fw-bold text-primary"
+                            th:text="${@formatUtils.formatVnd(listing.price)}">0 ₫</td>
                         <td>
                             <span class="status-badge"
                                   th:classappend="'status-' + ${listing.status.name()}"
-                                  th:text="${listing.status.displayName}">Status</span>
+                                  th:text="${listing.status.displayName}">Trạng thái</span>
                         </td>
-                        <td style="font-size:0.8rem; color:var(--color-gray-500);"
-                            th:text="${listing.campus}">Campus</td>
-                        <td style="font-size:0.8rem; color:var(--color-gray-500);"
-                            th:text="${#temporals.format(listing.createdAt, 'dd MMM yyyy')}">Date</td>
+                        <td>
+                            <span th:if="${listing.promoted}" class="badge-promoted">
+                                <i class="fa-solid fa-star"></i> Nổi bật
+                            </span>
+                            <a th:if="${!listing.promoted and listing.status.name() == 'AVAILABLE'}"
+                               th:href="@{/my-listings/{id}/promotion-payment(id=${listing.id})}"
+                               class="badge bg-warning bg-opacity-25 text-dark border border-warning text-decoration-none py-1 px-2">
+                                <i class="fa-solid fa-bolt me-1 text-warning"></i>Đẩy tin (10k)
+                            </a>
+                            <span th:if="${!listing.promoted and listing.status.name() != 'AVAILABLE'}" class="text-muted small">
+                                Thường
+                            </span>
+                        </td>
+                        <td class="small text-muted" th:text="${listing.campus}">Hòa Lạc</td>
+                        <td class="small text-muted" th:text="${@formatUtils.formatDate(listing.createdAt)}">Ngày</td>
                         <td class="text-end">
                             <div class="d-flex gap-2 justify-content-end">
+                                <a th:href="@{/books/{id}(id=${listing.id})}"
+                                   class="btn-outline-bl"
+                                   title="Xem chi tiết"
+                                   style="padding:4px 10px; font-size:0.75rem; border-radius:var(--radius-md);">
+                                    <i class="fa-solid fa-eye"></i> Xem
+                                </a>
                                 <a th:href="@{/my-listings/{id}/edit(id=${listing.id})}"
                                    class="btn-outline-bl"
                                    style="padding:4px 12px; font-size:0.75rem; border-radius:var(--radius-md);">
-                                    <i class="fa-solid fa-pen"></i> Edit
+                                    <i class="fa-solid fa-pen"></i> Sửa
                                 </a>
                                 <a th:href="@{/my-listings/{id}/delete(id=${listing.id})}"
-                                   class="btn-outline-bl"
-                                   style="padding:4px 12px; font-size:0.75rem; border-radius:var(--radius-md);
-                                          color:var(--color-danger); border-color:var(--color-danger);">
+                                   class="btn-outline-bl text-danger border-danger"
+                                   style="padding:4px 12px; font-size:0.75rem; border-radius:var(--radius-md);">
                                     <i class="fa-solid fa-trash"></i>
                                 </a>
                             </div>
@@ -111,43 +135,58 @@
         <div class="d-md-none d-flex flex-column gap-3">
             <div th:each="listing : ${listings}" class="bl-form-card p-3">
                 <div class="d-flex gap-3 mb-2">
-                    <div style="width:60px; height:75px; border-radius:var(--radius-md);
-                                background:linear-gradient(135deg,#EEF2FF,#E0E7FF);
-                                display:flex; align-items:center; justify-content:center;
-                                flex-shrink:0; overflow:hidden;">
+                    <a th:href="@{/books/{id}(id=${listing.id})}"
+                       style="width:60px; height:80px; border-radius:var(--radius-sm);
+                              background:#f8fafc; border:1px solid var(--color-gray-200);
+                              display:flex; align-items:center; justify-content:center;
+                              flex-shrink:0; overflow:hidden; padding:2px;">
                         <img th:if="${listing.imageUrl != null and !#strings.isEmpty(listing.imageUrl)}"
-                             th:src="${listing.imageUrl}" style="width:100%;height:100%;object-fit:cover;"
-                             onerror="this.style.display='none';"/>
+                             th:src="${listing.imageUrl}" th:alt="${listing.title}"
+                             loading="lazy"
+                             style="max-width:100%; max-height:100%; object-fit:contain;"
+                             onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
                         <span th:if="${listing.imageUrl == null or #strings.isEmpty(listing.imageUrl)}"
-                              style="font-size:2rem; opacity:0.35;">📖</span>
-                    </div>
+                              class="text-muted"><i class="fa-solid fa-book-open"></i></span>
+                    </a>
                     <div class="flex-grow-1">
                         <a th:href="@{/books/{id}(id=${listing.id})}"
-                           style="font-weight:700; font-size:0.9rem; color:var(--color-gray-900);"
-                           th:text="${listing.title}">Title</a>
-                        <div class="d-flex gap-2 mt-1">
+                           class="fw-bold text-dark text-decoration-none"
+                           th:text="${listing.title}">Tiêu đề</a>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
                             <span class="badge-condition" th:classappend="${listing.condition.name()}"
                                   th:text="${listing.condition.displayName}"></span>
                             <span class="status-badge"
                                   th:classappend="'status-' + ${listing.status.name()}"
-                                  th:text="${listing.status.displayName}">Status</span>
+                                  th:text="${listing.status.displayName}">Trạng thái</span>
+                            <span th:if="${listing.promoted}" class="badge-promoted">
+                                <i class="fa-solid fa-star"></i> Nổi bật
+                            </span>
                         </div>
                     </div>
                     <div class="text-end">
-                        <div style="font-weight:800; color:var(--color-primary); font-size:1.1rem;"
-                             th:text="${'$' + listing.price}">$0</div>
+                        <div class="fw-bold text-primary fs-5"
+                             th:text="${@formatUtils.formatVnd(listing.price)}">0 ₫</div>
                     </div>
                 </div>
                 <div class="d-flex gap-2 mt-2">
+                    <a th:href="@{/books/{id}(id=${listing.id})}"
+                       class="btn-outline-bl justify-content-center"
+                       style="padding:6px 10px; font-size:0.8rem; border-radius:var(--radius-md);">
+                        <i class="fa-solid fa-eye me-1"></i>Xem
+                    </a>
+                    <a th:if="${!listing.promoted and listing.status.name() == 'AVAILABLE'}"
+                       th:href="@{/my-listings/{id}/promotion-payment(id=${listing.id})}"
+                       class="btn btn-sm btn-warning flex-grow-1 fw-semibold">
+                        <i class="fa-solid fa-bolt me-1"></i>Đẩy tin nổi bật
+                    </a>
                     <a th:href="@{/my-listings/{id}/edit(id=${listing.id})}"
                        class="btn-outline-bl flex-grow-1 justify-content-center"
                        style="padding:6px; font-size:0.8rem; border-radius:var(--radius-md);">
-                        <i class="fa-solid fa-pen me-1"></i>Edit
+                        <i class="fa-solid fa-pen me-1"></i>Sửa
                     </a>
                     <a th:href="@{/my-listings/{id}/delete(id=${listing.id})}"
-                       class="btn-outline-bl"
-                       style="padding:6px 12px; font-size:0.8rem; border-radius:var(--radius-md);
-                              color:var(--color-danger); border-color:var(--color-danger);">
+                       class="btn-outline-bl text-danger border-danger"
+                       style="padding:6px 12px; font-size:0.8rem; border-radius:var(--radius-md);">
                         <i class="fa-solid fa-trash"></i>
                     </a>
                 </div>
@@ -158,10 +197,10 @@
     <!-- Empty state -->
     <div th:if="${#lists.isEmpty(listings)}" class="empty-state">
         <div class="empty-icon">📝</div>
-        <h3>You have no listings yet</h3>
-        <p>Ready to sell some textbooks? Create your first listing now!</p>
+        <h3>Bạn chưa có tin đăng bán nào</h3>
+        <p>Có sách hoặc giáo trình không dùng đến? Đăng bán ngay cho các bạn sinh viên cùng trường nhé!</p>
         <a th:href="@{/my-listings/new}" class="btn-primary-bl mt-3">
-            <i class="fa-solid fa-plus me-1"></i>Create Your First Listing
+            <i class="fa-solid fa-plus me-1"></i>Đăng tin bán sách đầu tiên
         </a>
     </div>
 </main>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Thanh toán đơn hàng ' + ${order.orderNumber})}"></head>
+<body>
+<nav th:replace="~{layout/layout :: navbar}"></nav>
+
+<main class="page-container page-content">
+
+    <!-- Flash messages -->
+    <div th:if="${errorMessage}" class="alert-error-bl mb-4">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Header & Escrow Trust Notice -->
+    <div class="bl-form-card mb-4 shadow-sm">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width: 50px; height: 50px; background: #e0f2fe; color: #0284c7; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem;">
+                <i class="fa-solid fa-shield-check"></i>
+            </div>
+            <div>
+                <span class="badge bg-secondary mb-1">[DEMO / SANDBOX] Cổng thanh toán bảo vệ người mua BookLoop</span>
+                <h2 class="fw-bold text-dark fs-3 mb-0">Thanh toán giữ tiền an toàn (Escrow)</h2>
+                <div class="text-muted small mt-1">
+                    Mã đơn hàng: <strong class="text-dark" th:text="${order.orderNumber}">ORD-XXXX</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info border-info d-flex align-items-center mt-3 mb-0">
+            <i class="fa-solid fa-lock fs-3 me-3 text-primary"></i>
+            <div class="small">
+                <strong>Cơ chế bảo vệ thanh toán có điều kiện:</strong> Tiền thanh toán của bạn không chuyển ngay cho người bán mà được đối tác trung gian thanh toán tạm giữ an toàn. Bạn có toàn quyền kiểm tra sách khi gặp mặt; chỉ khi bạn bấm <em>"Đã nhận được sách"</em>, tiền mới được giải ngân cho người bán. Nếu sách bị hỏng, rách hoặc không đúng mô tả, bạn có thể khiếu nại để nhận hoàn tiền 100%.
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: VietQR & Payment methods -->
+        <div class="col-lg-7">
+            <div class="bl-form-card shadow-sm text-center p-4">
+                <h5 class="fw-bold mb-3 text-dark">Quét mã VietQR chuyển khoản nhanh</h5>
+                <p class="text-muted small mb-3">Mở ứng dụng Mobile Banking của bất kỳ ngân hàng nào để quét mã QR:</p>
+
+                <!-- QR Display Container -->
+                <div class="d-inline-block p-3 bg-white border rounded shadow-sm mb-3" style="max-width: 280px;">
+                    <img th:src="'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + ${#uris.escapePath(sessionResponse.qrCodeData)}"
+                         alt="VietQR Code" class="img-fluid" style="width: 220px; height: 220px;"/>
+                    <div class="mt-2 fw-bold text-primary" style="font-size: 0.9rem;">
+                        <i class="fa-solid fa-qrcode me-1"></i>VietQR Napas 247
+                    </div>
+                </div>
+
+                <!-- Payment Reference Box -->
+                <div class="bg-light p-3 rounded border text-start mb-4" style="max-width: 420px; margin: 0 auto;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Số tiền cần thanh toán:</span>
+                        <strong class="text-danger fs-5" th:text="${@formatUtils.formatVnd(order.totalAmount)}">0 ₫</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Nội dung chuyển khoản:</span>
+                        <strong class="text-primary font-monospace" th:text="${sessionResponse.merchantReference}">PAY-XXXX</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Đơn vị thụ hưởng đối soát:</span>
+                        <span class="text-dark fw-semibold small">BookLoop Escrow Partner</span>
+                    </div>
+                </div>
+
+                <!-- Sandbox Simulation Action -->
+                <div class="p-3 bg-light-subtle border border-warning rounded" style="max-width: 480px; margin: 0 auto;">
+                    <div class="text-warning-emphasis fw-bold mb-2">
+                        <i class="fa-solid fa-flask-vial me-1"></i>Môi trường thử nghiệm Sandbox
+                    </div>
+                    <p class="small text-muted mb-3">
+                        Bạn có thể mở giao diện đối tác thanh toán thử nghiệm để mô phỏng quét mã thành công ngay lập tức:
+                    </p>
+                    <a th:href="@{/buyer/payment/mock-checkout(ref=${sessionResponse.merchantReference})}"
+                       class="btn btn-warning fw-bold px-4">
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Mở cổng đối tác thanh toán (Mô phỏng)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Order Summary -->
+        <div class="col-lg-5">
+            <div class="bl-form-card shadow-sm mb-4">
+                <h5 class="fw-bold mb-3 text-dark">Chi tiết đơn hàng</h5>
+                <ul class="list-unstyled mb-3">
+                    <li th:each="item : ${order.items}" class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-dark border" th:text="${item.quantity} + 'x'">1x</span>
+                            <span class="small fw-semibold text-truncate" style="max-width: 180px;" th:text="${item.bookTitle}">Tên sách</span>
+                        </div>
+                        <span class="small fw-bold text-dark" th:text="${@formatUtils.formatVnd(item.subtotal)}">0 ₫</span>
+                    </li>
+                </ul>
+
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <span class="fw-bold text-dark fs-5">Tổng thanh toán</span>
+                    <span class="fs-4 fw-bold text-primary" th:text="${@formatUtils.formatVnd(order.totalAmount)}">0 ₫</span>
+                </div>
+
+                <div class="mt-4">
+                    <a th:href="@{/orders/{id}(id=${order.id})}" class="btn btn-outline-secondary w-100">
+                        <i class="fa-solid fa-arrow-left me-1"></i>Quay lại chi tiết đơn hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/layout :: footer}"></footer>
+<th:block th:replace="~{layout/layout :: scripts}"></th:block>
+</body>
+</html>
+

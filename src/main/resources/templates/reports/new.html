@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/layout :: head('Báo cáo vi phạm tin đăng')}"></head>
+<body>
+<nav th:replace="~{layout/layout :: navbar}"></nav>
+
+<div class="page-container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <h3 class="fw-bold mb-3 text-danger">
+                        <i class="fa-solid fa-flag me-2"></i>Báo cáo vi phạm tin đăng
+                    </h3>
+                    <p class="text-muted small mb-4">
+                        Giúp BookLoop duy trì môi trường mua bán giáo trình an toàn và minh bạch cho cộng đồng sinh viên.
+                    </p>
+
+                    <!-- Alert message if cannot report -->
+                    <div th:if="${cannotReport}" class="alert alert-warning mb-4" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Bạn không thể tự gửi báo cáo đối với chính tin đăng của mình.
+                    </div>
+
+                    <div th:if="${errorMessage}" class="alert alert-danger mb-4" role="alert">
+                        <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                    </div>
+
+                    <!-- Product snippet -->
+                    <div th:if="${product != null}" class="card bg-light border-0 rounded-3 mb-4 p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width: 50px; height: 68px; flex-shrink: 0; background: #fff; border: 1px solid var(--color-gray-200); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px;">
+                                <img th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}"
+                                     th:src="${product.imageUrl}" th:alt="${product.title}"
+                                     style="max-width: 100%; max-height: 100%; object-fit: contain;"
+                                     onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
+                                <span th:if="${product.imageUrl == null or #strings.isEmpty(product.imageUrl)}"
+                                      class="text-muted"><i class="fa-solid fa-book-open"></i></span>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1" th:text="${product.title}">Tên sách</h6>
+                                <div class="text-muted small" th:text="${product.author}">Tác giả</div>
+                                <div class="text-muted small">Người bán: <strong th:text="${product.seller.fullName}">Người bán</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form -->
+                    <form th:unless="${cannotReport == true}" th:action="@{/reports}" th:object="${reportForm}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <input type="hidden" th:field="*{productId}"/>
+                        <input type="hidden" th:field="*{reportedUserId}"/>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Lý do báo cáo vi phạm <span class="text-danger">*</span></label>
+                            <select th:field="*{reason}" class="form-select" required>
+                                <option value="">-- Chọn lý do vi phạm --</option>
+                                <option value="Thông tin mô tả sai lệch, lừa đảo">Thông tin mô tả sai lệch, lừa đảo</option>
+                                <option value="Khai báo sai tình trạng sách thực tế">Khai báo sai tình trạng sách thực tế</option>
+                                <option value="Sách in lậu, photo trái phép">Sách in lậu, photo trái phép</option>
+                                <option value="Nội dung không phù hợp hoặc phản cảm">Nội dung không phù hợp hoặc phản cảm</option>
+                                <option value="Giá bán bất thường hoặc dấu hiệu lừa cọc">Giá bán bất thường hoặc dấu hiệu lừa cọc</option>
+                                <option value="Vi phạm quy chế cộng đồng khác">Vi phạm quy chế cộng đồng khác</option>
+                            </select>
+                            <div th:if="${#fields.hasErrors('reason')}" class="text-danger small mt-1" th:errors="*{reason}"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Mô tả chi tiết bằng chứng / bối cảnh</label>
+                            <textarea th:field="*{description}" class="form-control" rows="4"
+                                      placeholder="Cung cấp thêm chi tiết để đội ngũ quản trị viên xác minh nhanh chóng..."></textarea>
+                            <div th:if="${#fields.hasErrors('description')}" class="text-danger small mt-1" th:errors="*{description}"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a th:if="${product != null}" th:href="@{/books/{id}(id=${product.id})}" class="btn btn-outline-secondary">
+                                Quay lại
+                            </a>
+                            <a th:if="${product == null}" th:href="@{/}" class="btn btn-outline-secondary">
+                                Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fa-solid fa-paper-plane me-1"></i>Gửi báo cáo
+                            </button>
+                        </div>
+                    </form>
+
+                    <div th:if="${cannotReport}" class="text-end">
+                        <a th:if="${product != null}" th:href="@{/books/{id}(id=${product.id})}" class="btn btn-secondary">
+                            Quay lại trang sách
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout/layout :: footer}"></footer>
+<th:block th:replace="~{layout/layout :: scripts}"></th:block>
+</body>
+</html>

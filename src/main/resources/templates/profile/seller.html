@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/layout :: head(${seller.fullName})}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Hồ sơ người bán ' + ${seller.fullName})}"></head>
 <body>
 <nav th:replace="~{layout/layout :: navbar}"></nav>
 
@@ -8,19 +8,29 @@
 
     <!-- Breadcrumb -->
     <nav class="bl-breadcrumb" aria-label="Breadcrumb">
-        <a th:href="@{/}">Home</a>
+        <a th:href="@{/}">Trang chủ</a>
         <span class="separator">/</span>
-        <span class="current" th:text="${seller.fullName + '''s Profile'}">Seller</span>
+        <span class="current" th:text="'Hồ sơ người bán: ' + ${seller.fullName}">Người bán</span>
     </nav>
 
     <!-- Seller info header -->
-    <div class="profile-header-card mb-4">
+    <div class="profile-header-card mb-4 shadow-sm">
         <div class="d-flex align-items-center gap-4 flex-wrap">
             <div class="profile-avatar-lg"
                  th:text="${#strings.substring(seller.fullName, 0, 1)}">?</div>
             <div>
-                <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:0.25rem;"
-                    th:text="${seller.fullName}">Seller</h2>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:0.25rem;"
+                        th:text="${seller.fullName}">Tên người bán</h2>
+
+                    <!-- Star Rating Badge -->
+                    <div class="badge bg-warning text-dark px-3 py-2 d-flex align-items-center gap-1 fs-6">
+                        <i class="fa-solid fa-star text-white"></i>
+                        <span class="fw-bold" th:text="${avgRating != null and avgRating > 0 ? avgRating : 'Mới'}">5.0</span>
+                        <span class="text-secondary small ms-1" th:text="'(' + ${reviewCount} + ' đánh giá)'">(0 đánh giá)</span>
+                    </div>
+                </div>
+
                 <p style="opacity:0.8; font-size:0.875rem; margin:0;"
                    th:if="${seller.university != null}"
                    th:text="${seller.university}"></p>
@@ -30,7 +40,7 @@
                     <span th:text="${seller.campus}"></span>
                 </p>
                 <p style="opacity:0.6; font-size:0.75rem; margin-top:0.5rem; margin-bottom:0;"
-                   th:text="'Member since ' + ${#temporals.format(seller.createdAt, 'MMMM yyyy')}">
+                   th:text="'Thành viên từ ' + ${@formatUtils.formatDate(seller.createdAt)}">
                 </p>
             </div>
         </div>
@@ -39,25 +49,32 @@
     <!-- Seller's Listings -->
     <div class="section-header">
         <h2 class="section-title">
-            <i class="fa-solid fa-book-open me-2" style="color:var(--color-primary);"></i>
-            Listings by <span th:text="${seller.fullName}">Seller</span>
+            <i class="fa-solid fa-book-open me-2 text-primary"></i>
+            Sách đang bán bởi <span th:text="${seller.fullName}">Người bán</span>
         </h2>
     </div>
 
     <!-- Listing grid (only AVAILABLE listings shown publicly) -->
     <div th:if="${not #lists.isEmpty(listings)}"
-         class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
+         class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4 mb-5">
         <div th:each="book : ${listings}" class="col"
              th:if="${book.status.name() == 'AVAILABLE'}">
             <a th:href="@{/books/{id}(id=${book.id})}" class="text-decoration-none">
-                <div class="book-card">
+                <div class="book-card h-100" th:classappend="${book.promoted ? 'book-card-promoted' : ''}">
                     <div class="book-card-image">
                         <img th:if="${book.imageUrl != null and !#strings.isEmpty(book.imageUrl)}"
                              th:src="${book.imageUrl}" th:alt="${book.title}"
-                             onerror="this.parentElement.querySelector('.book-placeholder').style.display='block'; this.style.display='none';"/>
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
                         <div class="book-placeholder"
-                             th:style="${book.imageUrl != null and !#strings.isEmpty(book.imageUrl)} ? 'display:none' : ''">📖</div>
+                             th:if="${book.imageUrl == null or #strings.isEmpty(book.imageUrl)}">
+                            <i class="fa-solid fa-book-open"></i>
+                            <span>Giáo trình</span>
+                        </div>
                         <div class="book-card-badges">
+                            <span th:if="${book.promoted}" class="badge-promoted">
+                                <i class="fa-solid fa-star"></i> Nổi bật
+                            </span>
                             <span th:if="${book.courseCode != null}" class="badge-course"
                                   th:text="${book.courseCode}"></span>
                             <span class="badge-condition" th:classappend="${book.condition.name()}"
@@ -66,16 +83,21 @@
                     </div>
                     <div class="book-card-body">
                         <div class="book-card-meta"
-                             th:text="${book.category != null ? book.category : 'Textbook'}"></div>
-                        <div class="book-card-title" th:text="${book.title}">Title</div>
+                             th:text="${book.category != null ? book.category : 'Giáo trình'}"></div>
+                        <div class="book-card-title text-truncate-2" th:text="${book.title}">Tiêu đề</div>
                         <div class="book-card-author" th:if="${book.author != null}"
                              th:text="${book.author}"></div>
-                        <div class="book-card-footer">
-                            <div class="book-card-price" th:text="${'$' + book.price}">$0</div>
-                            <div class="book-card-location">
-                                <i class="fa-solid fa-location-dot"></i>
-                                <span th:text="${book.campus}"></span>
+                        <div class="book-card-footer mt-auto flex-column align-items-stretch">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="book-card-price text-danger fw-bold" th:text="${@formatUtils.formatVnd(book.price)}">0 ₫</div>
+                                <div class="book-card-location">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    <span th:text="${book.campus}"></span>
+                                </div>
                             </div>
+                            <span class="btn btn-sm btn-outline-primary rounded-pill w-100 text-center py-1">
+                                <i class="fa-solid fa-eye me-1"></i>Xem chi tiết
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -83,15 +105,59 @@
         </div>
     </div>
 
-    <!-- Empty state -->
-    <div th:if="${#lists.isEmpty(listings)}" class="empty-state">
+    <!-- Empty state for listings -->
+    <div th:if="${#lists.isEmpty(listings)}" class="empty-state mb-5">
         <div class="empty-icon">📭</div>
-        <h3>No listings yet</h3>
-        <p>This seller doesn't have any active listings at the moment.</p>
-        <a th:href="@{/books}" class="btn-primary-bl mt-3">
-            <i class="fa-solid fa-arrow-left me-1"></i>Browse All Books
-        </a>
+        <h3>Không có cuốn sách nào đang mở bán</h3>
+        <p>Hiện người bán này chưa có cuốn sách nào sẵn sàng giao dịch.</p>
     </div>
+
+    <!-- Ratings & Reviews Section -->
+    <div class="section-header mt-5">
+        <h2 class="section-title">
+            <i class="fa-solid fa-comments me-2 text-warning"></i>
+            Đánh giá từ người mua
+            <span class="badge bg-light text-dark border fs-6 ms-2" th:text="${reviewCount}">0</span>
+        </h2>
+    </div>
+
+    <!-- Reviews list -->
+    <div th:if="${reviews != null and not #lists.isEmpty(reviews)}" class="d-flex flex-column gap-3 mb-5">
+        <div th:each="rev : ${reviews}" class="bl-form-card p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="seller-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                        <span th:text="${#strings.substring(rev.buyer.fullName, 0, 1)}">B</span>
+                    </div>
+                    <div>
+                        <strong class="text-dark d-block" th:text="${rev.buyer.fullName}">Tên người mua</strong>
+                        <small class="text-muted" th:text="${@formatUtils.formatDate(rev.createdAt)}">Ngày</small>
+                    </div>
+                </div>
+                <!-- Stars display -->
+                <div class="text-warning">
+                    <i th:each="i : ${#numbers.sequence(1, 5)}"
+                       class="fa-star"
+                       th:classappend="${i <= rev.rating} ? 'fa-solid' : 'fa-regular'"></i>
+                </div>
+            </div>
+            <p class="text-dark mt-2 mb-0" style="white-space: pre-line; line-height: 1.6;"
+               th:if="${rev.comment != null and !#strings.isEmpty(rev.comment)}"
+               th:text="${rev.comment}">Nhận xét</p>
+            <p class="text-muted small fst-italic mt-2 mb-0"
+               th:if="${rev.comment == null or #strings.isEmpty(rev.comment)}">
+                Người mua chỉ để lại số sao đánh giá.
+            </p>
+        </div>
+    </div>
+
+    <!-- Empty reviews state -->
+    <div th:if="${reviews == null or #lists.isEmpty(reviews)}" class="p-4 rounded bg-light border text-center text-muted mb-5">
+        <i class="fa-regular fa-star fa-2x mb-2 text-muted"></i>
+        <h5 class="fw-semibold">Chưa có đánh giá nào</h5>
+        <p class="small mb-0">Người bán này chưa nhận được đánh giá nào từ các đơn hàng đã hoàn tất.</p>
+    </div>
+
 </main>
 
 <footer th:replace="~{layout/layout :: footer}"></footer>

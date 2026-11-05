@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Chi trả người bán')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('finance-payouts')}"></div>
+
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-hand-holding-dollar me-2 text-success"></i>Lệnh Chi trả người bán (Payouts)</div>
+            <span class="admin-badge">Admin Finance</span>
+        </div>
+
+        <div class="admin-content">
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="stat-card mb-4">
+                <form th:action="@{/admin/finance/payouts}" method="get" class="row g-3 align-items-center">
+                    <div class="col-sm-4">
+                        <label class="form-label small fw-semibold">Lọc theo trạng thái chi trả</label>
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option th:each="st : ${statuses}" th:value="${st.name()}"
+                                    th:text="${st.displayName}"
+                                    th:selected="${selectedStatus != null and selectedStatus.name() == st.name()}"></option>
+                        </select>
+                    </div>
+                    <div class="col-sm-8 text-end pt-4">
+                        <span class="text-muted small">Tổng số: <strong th:text="${payouts.totalElements}">0</strong> lệnh</span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table -->
+            <div class="stat-card">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-muted">
+                                <th>Mã lệnh (Idempotency)</th>
+                                <th>Đơn hàng</th>
+                                <th>Người bán</th>
+                                <th>Số tiền thực nhận</th>
+                                <th>Trạng thái</th>
+                                <th>Mã đối tác</th>
+                                <th>Thời gian</th>
+                                <th class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${payouts.empty}">
+                                <td colspan="8" class="text-center py-4 text-muted">Không có lệnh chi trả nào.</td>
+                            </tr>
+                            <tr th:each="p : ${payouts.content}">
+                                <td class="font-monospace fw-bold text-dark small" th:text="${p.idempotencyKey}">KEY-XXXX</td>
+                                <td>
+                                    <a th:if="${p.order != null}" th:href="@{/orders/{id}(id=${p.order.id})}"
+                                       class="text-primary fw-semibold" th:text="${p.order.orderNumber}">ORD-XXXX</a>
+                                </td>
+                                <td class="small" th:text="${p.seller != null ? p.seller.fullName : '—'}">Người bán</td>
+                                <td>
+                                    <strong class="text-success" th:text="${@formatUtils.formatVnd(p.amount)}">0 ₫</strong>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${p.status.name() == 'PAID' or p.status.name() == 'CONFIRMED'} ? 'bg-success' : (${p.status.name() == 'FAILED'} ? 'bg-danger' : 'bg-warning text-dark')"
+                                          th:text="${p.status.displayName}">Trạng thái</span>
+                                </td>
+                                <td class="small text-muted font-monospace" th:text="${p.providerPayoutId != null ? p.providerPayoutId : '—'}">mock_pout</td>
+                                <td class="small text-muted" th:text="${#temporals.format(p.createdAt, 'dd/MM/yyyy HH:mm')}">Thời gian</td>
+                                <td class="text-end">
+                                    <form th:if="${p.status.name() == 'FAILED' or p.status.name() == 'PENDING'}"
+                                          th:action="@{/admin/finance/payouts/{id}/retry(id=${p.id})}" method="post" class="d-inline">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-warning"
+                                                onclick="return confirm('Thực hiện gửi lại lệnh giải ngân này ngay?');">
+                                            <i class="fa-solid fa-rotate me-1"></i>Thử lại
+                                        </button>
+                                    </form>
+                                    <span th:if="${p.status.name() == 'PAID' or p.status.name() == 'CONFIRMED'}" class="text-success small fw-semibold">
+                                        <i class="fa-solid fa-check me-1"></i>Hoàn tất
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div th:if="${payouts.totalPages > 1}" class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <span class="small text-muted" th:text="'Trang ' + (${payouts.number} + 1) + ' / ' + ${payouts.totalPages}"></span>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" th:classappend="${payouts.first} ? 'disabled'">
+                            <a class="page-link" th:href="@{/admin/finance/payouts(page=${payouts.number - 1}, status=${selectedStatus})}">&laquo;</a>
+                        </li>
+                        <li class="page-item" th:classappend="${payouts.last} ? 'disabled'">
+                            <a class="page-link" th:href="@{/admin/finance/payouts(page=${payouts.number + 1}, status=${selectedStatus})}">&raquo;</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{admin/layout :: adminScripts}"></th:block>
+</body>
+</html>
+

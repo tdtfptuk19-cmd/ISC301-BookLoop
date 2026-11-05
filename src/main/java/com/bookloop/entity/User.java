@@ -18,7 +18,7 @@ public class User {
 
     @NotBlank(message = "Full name is required")
     @Size(max = 100, message = "Full name cannot exceed 100 characters")
-    @Column(name = "full_name", nullable = false, length = 100)
+    @Column(name = "full_name", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String fullName;
 
     @NotBlank(message = "Email is required")
@@ -32,11 +32,11 @@ public class User {
     private String password;
 
     @Size(max = 150)
-    @Column(name = "university", length = 150)
+    @Column(name = "university", length = 150, columnDefinition = "NVARCHAR(150)")
     private String university;
 
     @Size(max = 100)
-    @Column(name = "campus", length = 100)
+    @Column(name = "campus", length = 100, columnDefinition = "NVARCHAR(100)")
     private String campus;
 
     @Size(max = 20)
@@ -49,6 +49,14 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
     private Role role = Role.STUDENT;
+
+    /**
+     * Whether the account is active. Admins can deactivate accounts.
+     * Deactivated users cannot log in (Spring Security checks isEnabled()).
+     */
+    @Column(name = "enabled", nullable = false,
+            columnDefinition = "BIT NOT NULL DEFAULT 1")
+    private boolean enabled = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -168,5 +176,13 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

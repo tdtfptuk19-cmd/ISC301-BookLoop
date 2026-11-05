@@ -19,9 +19,9 @@ public class ProductForm {
     @Size(max = 3000)
     private String description;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.00", inclusive = true, message = "Price cannot be negative")
-    @Digits(integer = 10, fraction = 2, message = "Price must be a valid monetary amount (e.g. 45.00)")
+    @NotNull(message = "Vui lòng nhập giá bán")
+    @DecimalMin(value = "0.00", inclusive = true, message = "Giá bán không được âm")
+    @Digits(integer = 10, fraction = 2, message = "Giá bán phải là số hợp lệ (VNĐ)")
     private BigDecimal price;
 
     @NotNull(message = "Please select the book condition")
@@ -29,6 +29,8 @@ public class ProductForm {
 
     @Size(max = 100)
     private String category;
+
+    private Long categoryId;
 
     @Size(max = 150)
     private String author;
@@ -55,6 +57,8 @@ public class ProductForm {
     private String campus;
 
     private ListingStatus status = ListingStatus.AVAILABLE;
+
+    private Long academicBookId;
 
     // --- Getters and Setters ---
 
@@ -96,6 +100,14 @@ public class ProductForm {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 
     public String getAuthor() {
@@ -168,5 +180,13 @@ public class ProductForm {
 
     public void setStatus(ListingStatus status) {
         this.status = status;
+    }
+
+    public Long getAcademicBookId() {
+        return academicBookId;
+    }
+
+    public void setAcademicBookId(Long academicBookId) {
+        this.academicBookId = academicBookId;
     }
 }

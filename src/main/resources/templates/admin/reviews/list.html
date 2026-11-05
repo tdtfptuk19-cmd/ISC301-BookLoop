@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Reviews')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('reviews')}"></div>
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-star me-2 text-warning"></i>Reviews Moderation</div>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <div class="admin-content">
+
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Search / Filter -->
+            <div class="admin-card mb-4">
+                <div class="card-header">Search &amp; Filter</div>
+                <div class="p-3">
+                    <form th:action="@{/admin/reviews}" method="get" class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-600">Keyword (comment or reviewer name)</label>
+                            <input type="text" name="keyword" th:value="${keyword}"
+                                   class="form-control form-control-sm" placeholder="Search..."/>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-600">Rating</label>
+                            <select name="rating" class="form-select form-select-sm">
+                                <option value="">All Ratings</option>
+                                <option value="5" th:selected="${selectedRating == 5}">5 Stars</option>
+                                <option value="4" th:selected="${selectedRating == 4}">4 Stars</option>
+                                <option value="3" th:selected="${selectedRating == 3}">3 Stars</option>
+                                <option value="2" th:selected="${selectedRating == 2}">2 Stars</option>
+                                <option value="1" th:selected="${selectedRating == 1}">1 Star</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-600">Visibility</label>
+                            <select name="hidden" class="form-select form-select-sm">
+                                <option value="">All</option>
+                                <option value="false" th:selected="${selectedHidden == 'false'}">Visible (Active)</option>
+                                <option value="true" th:selected="${selectedHidden == 'true'}">Hidden (Moderated)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="fa-solid fa-magnifying-glass me-1"></i>Search
+                            </button>
+                            <a th:href="@{/admin/reviews}" class="btn btn-outline-secondary btn-sm">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="card-header">
+                    All Reviews
+                    <span class="badge bg-primary ms-1" th:text="${reviews.totalElements}"></span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">ID</th>
+                                <th>Reviewer</th>
+                                <th>Seller</th>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${reviews.isEmpty()}">
+                                <td colspan="8" class="text-center text-muted py-4">No reviews found.</td>
+                            </tr>
+                            <tr th:each="r : ${reviews}">
+                                <td class="ps-3 text-muted small" th:text="${r.id}"></td>
+                                <td class="small" th:text="${r.buyer.fullName}"></td>
+                                <td class="small" th:text="${r.seller.fullName}"></td>
+                                <td>
+                                    <span class="text-warning small">
+                                        <i class="fa-solid fa-star" th:each="i : ${#numbers.sequence(1, r.rating)}"></i>
+                                    </span>
+                                    <span class="small fw-600 ms-1" th:text="${r.rating}"></span>
+                                </td>
+                                <td class="small" style="max-width: 250px;">
+                                    <span th:text="${r.comment ?: '—'}"></span>
+                                </td>
+                                <td>
+                                    <span th:if="${!r.hidden}" class="badge bg-success badge-status">Visible</span>
+                                    <span th:if="${r.hidden}" class="badge bg-danger badge-status">Hidden</span>
+                                </td>
+                                <td class="text-muted small"
+                                    th:text="${#temporals.format(r.createdAt, 'MMM d, yyyy')}"></td>
+                                <td>
+                                    <form th:if="${!r.hidden}"
+                                          th:action="@{/admin/reviews/{id}/hide(id=${r.id})}"
+                                          method="post" class="d-inline"
+                                          onsubmit="return confirm('Hide this review from public seller profile?');">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="page" th:value="${reviews.number}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hide Review">
+                                            <i class="fa-solid fa-eye-slash"></i>
+                                        </button>
+                                    </form>
+                                    <form th:if="${r.hidden}"
+                                          th:action="@{/admin/reviews/{id}/unhide(id=${r.id})}"
+                                          method="post" class="d-inline"
+                                          onsubmit="return confirm('Restore this review to visible?');">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="page" th:value="${reviews.number}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Restore Review">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="p-3 d-flex justify-content-between align-items-center border-top" th:if="${reviews.totalPages > 1}">
+                    <small class="text-muted">
+                        Page <span th:text="${reviews.number + 1}"></span> of <span th:text="${reviews.totalPages}"></span>
+                    </small>
+                    <div class="btn-group btn-group-sm">
+                        <a th:href="@{/admin/reviews(page=${reviews.number - 1}, keyword=${keyword}, rating=${selectedRating}, hidden=${selectedHidden})}"
+                           th:classappend="${!reviews.hasPreviousPage()} ? 'disabled' : ''"
+                           class="btn btn-outline-secondary"><i class="fa-solid fa-chevron-left"></i></a>
+                        <a th:href="@{/admin/reviews(page=${reviews.number + 1}, keyword=${keyword}, rating=${selectedRating}, hidden=${selectedHidden})}"
+                           th:classappend="${!reviews.hasNextPage()} ? 'disabled' : ''"
+                           class="btn btn-outline-secondary"><i class="fa-solid fa-chevron-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+</body>
+</html>
+

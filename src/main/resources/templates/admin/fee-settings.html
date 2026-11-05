@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: adminHead('Cài đặt phí đăng tin')}"></head>
+<body>
+<div class="admin-wrapper">
+    <div th:replace="~{admin/layout :: sidebar('fee-settings')}"></div>
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="page-heading">
+                <i class="fa-solid fa-gear me-2 text-primary"></i>Cài đặt Phí Đăng tin &amp; Đẩy tin Nổi bật
+            </div>
+            <span class="admin-badge">Cấu hình hệ thống</span>
+        </div>
+        <div class="admin-content">
+
+            <!-- Flash alerts -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="admin-card p-4">
+                        <h5 class="fw-bold mb-3 text-dark">
+                            <i class="fa-solid fa-sliders me-2 text-primary"></i>Thông số phí đăng tin
+                        </h5>
+                        <p class="text-muted small mb-4">
+                            Mức phí này được áp dụng snapshot cho mỗi tin đăng sách mới khi người bán tạo bài. Thay đổi mức phí ở đây sẽ không ảnh hưởng đến các giao dịch lịch sử trước đó.
+                        </p>
+
+                        <form th:action="@{/admin/fee-settings}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Mức phí mỗi tin đăng (VNĐ)</label>
+                                <div class="input-group">
+                                    <input type="number" name="fee" class="form-control" th:value="${currentFee}"
+                                           step="1000" min="0" required/>
+                                    <span class="input-group-text fw-bold">VNĐ</span>
+                                </div>
+                                <small class="text-muted">Mức ban đầu tạm tính: 10.000 ₫ / tin đăng</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Thời hạn hiển thị nổi bật (Số ngày)</label>
+                                <div class="input-group">
+                                    <input type="number" name="durationDays" class="form-control" th:value="${durationDays}"
+                                           min="1" max="90" required/>
+                                    <span class="input-group-text">Ngày</span>
+                                </div>
+                                <small class="text-muted">Thời hạn tin được gắn nhãn Nổi bật và đẩy top (mặc định: 7 ngày)</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Thông tin &amp; Hướng dẫn chuyển khoản ngân hàng</label>
+                                <textarea name="instructions" class="form-control font-monospace small" rows="6"
+                                          th:text="${instructions}" required></textarea>
+                                <small class="text-muted">Nội dung này hiển thị cho người bán tại trang hướng dẫn thanh toán</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="fa-solid fa-floppy-disk me-1"></i>Lưu cấu hình phí
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="admin-card p-4 bg-light border-0">
+                        <h6 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-info me-2"></i>Quy định &amp; Cơ chế vận hành</h6>
+                        <ul class="text-muted small ps-3 mb-0">
+                            <li class="mb-2">Mỗi khi người bán tạo tin đăng sách mới, hệ thống tự động sinh 1 bản ghi giao dịch phí tương ứng.</li>
+                            <li class="mb-2">Người bán sửa tin đăng hoặc làm mới trang sẽ <strong>không</strong> bị tính thêm phí.</li>
+                            <li class="mb-2">Tin đăng có phí được duyệt sẽ nhận huy hiệu <span class="badge bg-warning text-dark">Nổi bật</span> và ưu tiên lên trang chủ.</li>
+                            <li class="mb-2">Hết thời hạn quảng cáo, tin tự động trở về tin thông thường mà không cần thao tác thủ công.</li>
+                            <li>Tất cả các lần cập nhật phí và duyệt giao dịch đều được ghi lại tại <strong>Nhật ký hoạt động (Audit log)</strong>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div th:replace="~{admin/layout :: adminScripts}"></div>
+</body>
+</html>
+

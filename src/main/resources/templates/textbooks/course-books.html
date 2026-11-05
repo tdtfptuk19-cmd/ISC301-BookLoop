@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head(${selectedCourse.name} + ' - Giáo trình')}"></head>
+<body>
+<nav th:replace="~{layout/layout :: navbar}"></nav>
+
+<div class="page-container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-3">
+            <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/textbooks}" class="text-decoration-none">Tìm giáo trình</a></li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${selectedCourse.name}">Môn học</li>
+        </ol>
+    </nav>
+
+    <!-- Course Banner Card -->
+    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-primary text-white p-4">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <span class="badge bg-white text-primary mb-2" th:text="${selectedCourse.courseCode ?: 'Môn học'}">Mã môn</span>
+                <h3 class="fw-bold mb-1" th:text="${selectedCourse.name}">Tên môn học</h3>
+                <p class="mb-2 opacity-75 small" th:text="${selectedCourse.program.institution.name + ' &bull; ' + selectedCourse.program.name}">Trường &amp; Ngành</p>
+                <div class="d-flex gap-3 small opacity-90">
+                    <span th:if="${selectedCourse.credits != null}"><i class="fa-solid fa-award me-1"></i><strong th:text="${selectedCourse.credits}">3</strong> Tín chỉ</span>
+                    <span th:if="${selectedCourse.semester != null}"><i class="fa-solid fa-calendar-days me-1"></i>Học kỳ <strong th:text="${selectedCourse.semester}">1</strong></span>
+                    <span><i class="fa-solid fa-circle-check me-1"></i><span th:text="${selectedCourse.mandatory == true ? 'Môn bắt buộc' : 'Môn tự chọn'}">Bắt buộc</span></span>
+                </div>
+            </div>
+            <a th:href="@{/textbooks(institutionId=${selectedCourse.program.institution.id})}" class="btn btn-sm btn-light rounded-pill px-3">
+                <i class="fa-solid fa-arrow-left me-1"></i>Đổi môn học
+            </a>
+        </div>
+    </div>
+
+    <!-- Recommended Books List -->
+    <div class="row g-4">
+        <div class="col-12" th:if="${courseBooks.isEmpty()}">
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+                <i class="fa-solid fa-book fa-3x text-muted opacity-50 mb-3"></i>
+                <h5 class="fw-bold">Chưa có thông tin giáo trình được gán cho môn học này</h5>
+                <p class="text-muted small">Bạn có thể quay lại danh mục chung để tìm kiếm theo tên sách hoặc mã môn học.</p>
+                <a th:href="@{/textbooks}" class="btn btn-outline-primary btn-sm rounded-pill px-4 align-self-center">Quay lại danh mục</a>
+            </div>
+        </div>
+
+        <div class="col-md-6" th:each="cb : ${courseBooks}">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden p-3 d-flex flex-row gap-3">
+                <a th:href="@{/textbooks/{id}(id=${cb.book.id})}" style="width: 110px; height: 145px; flex-shrink: 0;" class="bg-light rounded p-2 text-center d-flex align-items-center justify-content-center text-decoration-none">
+                    <img th:if="${cb.book.coverImageUrl != null and !#strings.isEmpty(cb.book.coverImageUrl)}"
+                         th:src="${cb.book.coverImageUrl}"
+                         th:alt="${cb.book.title}"
+                         loading="lazy"
+                         class="img-fluid rounded"
+                         style="max-height: 100%; max-width: 100%; object-fit: contain;"
+                         onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
+                    <div th:if="${cb.book.coverImageUrl == null or #strings.isEmpty(cb.book.coverImageUrl)}"
+                         class="book-placeholder" style="width: 80px; height: 115px; padding: 6px;">
+                        <i class="fa-solid fa-graduation-cap" style="font-size: 1.5rem; margin-bottom: 2px;"></i>
+                        <span style="font-size: 0.55rem;">Học liệu</span>
+                    </div>
+                </a>
+
+                <div class="flex-grow-1 d-flex flex-column">
+                    <div class="mb-1">
+                        <span th:if="${cb.relationshipType.name() == 'REQUIRED'}"
+                              class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25"
+                              th:text="${cb.relationshipType.displayName}">Giáo trình bắt buộc</span>
+                        <span th:if="${cb.relationshipType.name() == 'RECOMMENDED'}"
+                              class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"
+                              th:text="${cb.relationshipType.displayName}">Khuyến nghị chính thức</span>
+                        <span th:if="${cb.relationshipType.name() == 'SUGGESTED_REFERENCE'}"
+                              class="badge bg-secondary bg-opacity-10 text-secondary border"
+                              th:text="${cb.relationshipType.displayName}">Tham khảo đề xuất</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-1">
+                        <a th:href="@{/textbooks/{id}(id=${cb.book.id})}"
+                           th:text="${cb.book.title}"
+                           class="text-decoration-none text-dark"></a>
+                    </h5>
+                    <div class="small text-muted mb-1" th:text="${cb.book.author}">Tác giả</div>
+                    <div class="small text-muted mb-2">
+                        <span th:if="${cb.book.publisher}" th:text="${cb.book.publisher}">NXB</span>
+                        <span th:if="${cb.book.edition}" th:text="' &bull; ' + ${cb.book.edition}">Tái bản</span>
+                    </div>
+
+                    <p class="small text-muted mb-3" th:text="${cb.notes ?: cb.book.description}"></p>
+
+                    <div class="mt-auto d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="small text-muted font-monospace" th:if="${cb.book.isbn}" th:text="'ISBN: ' + ${cb.book.isbn}"></span>
+                        <a th:href="@{/textbooks/{id}(id=${cb.book.id})}" class="btn btn-sm btn-primary rounded-pill px-3">
+                            Xem sách cũ đang bán &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout/layout :: footer}"></footer>
+<th:block th:replace="~{layout/layout :: scripts}"></th:block>
+</body>
+</html>
+

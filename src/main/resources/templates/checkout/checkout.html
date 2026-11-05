@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Xác nhận đặt hàng')}"></head>
+<body>
+<nav th:replace="~{layout/layout :: navbar}"></nav>
+
+<main class="page-container page-content">
+
+    <!-- Flash messages -->
+    <div th:if="${errorMessage}" class="alert-error-bl mb-4">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav class="bl-breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/}">Trang chủ</a>
+        <span class="separator">/</span>
+        <a th:href="@{/cart}">Giỏ hàng</a>
+        <span class="separator">/</span>
+        <span class="current">Xác nhận đặt hàng</span>
+    </nav>
+
+    <div class="mb-4">
+        <h1 class="page-title mb-1">Xác nhận thông tin đặt hàng</h1>
+        <p class="text-muted mb-0">Lựa chọn hình thức giao dịch và cung cấp thông tin liên hệ để người bán dễ dàng kết nối với bạn.</p>
+    </div>
+
+    <form th:action="@{/checkout}" th:object="${checkoutForm}" method="post"
+          onsubmit="if (this.dataset.submitting) return false; this.dataset.submitting = 'true'; var btn = this.querySelector('button[type=submit]'); if (btn) { btn.innerHTML = '<i class=\'fa-solid fa-spinner fa-spin me-2\'></i>Đang xử lý đặt mua...'; setTimeout(function(){ btn.disabled = true; }, 50); } return true;">
+        <div class="row g-4">
+
+            <!-- Left: Transaction Method & Details -->
+            <div class="col-lg-7">
+
+                <!-- Step 1: Payment & Meetup Option -->
+                <div class="bl-form-card mb-4 shadow-sm">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: var(--color-gray-900);">
+                        <span class="badge bg-primary rounded-circle" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">1</span>
+                        Chọn phương thức giao dịch
+                    </h5>
+
+                    <!-- Option A: Marketplace Holding (Recommended) -->
+                    <div class="checkout-method-card mb-3 p-3 border rounded-3 position-relative"
+                         onclick="document.getElementById('methodHolding').checked = true;"
+                         style="cursor: pointer; transition: var(--transition-base); border-color: var(--color-primary) !important; background: #faf5ff;">
+                        <div class="form-check d-flex align-items-start gap-3">
+                            <input class="form-check-input mt-1" type="radio" th:field="*{paymentMethod}"
+                                   id="methodHolding" value="MARKETPLACE_HOLDING"/>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                    <label class="form-check-label fw-bold text-dark mb-0" for="methodHolding">
+                                        <i class="fa-solid fa-shield-halved me-1 text-primary"></i>
+                                        Thanh toán bảo đảm qua sàn BookLoop
+                                    </label>
+                                    <span class="badge bg-success" style="font-size: 0.725rem;">Khuyên dùng &bull; Bảo vệ 100%</span>
+                                </div>
+                                <p class="text-muted small mb-0">
+                                    Tiền thanh toán được đối tác thanh toán tạm giữ an toàn trong suốt thời gian người bán chuẩn bị và giao sách. Sau khi bạn nhận sách và bấm <strong>&ldquo;Xác nhận đã nhận sách&rdquo;</strong>, tiền mới được tự động giải ngân thẳng về tài khoản ngân hàng của người bán.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option B: In-person Meetup (COD) -->
+                    <div class="checkout-method-card mb-3 p-3 border rounded-3 position-relative"
+                         onclick="document.getElementById('methodMeetup').checked = true;"
+                         style="cursor: pointer; transition: var(--transition-base);">
+                        <div class="form-check d-flex align-items-start gap-3">
+                            <input class="form-check-input mt-1" type="radio" th:field="*{paymentMethod}"
+                                   id="methodMeetup" value="IN_PERSON_MEETUP"/>
+                            <div>
+                                <label class="form-check-label fw-bold text-dark mb-1" for="methodMeetup">
+                                    <i class="fa-solid fa-handshake me-1 text-secondary"></i>
+                                    Gặp trực tiếp &amp; Thanh toán tiền mặt tại Campus (COD)
+                                </label>
+                                <p class="text-muted small mb-0">
+                                    Hẹn gặp người bán trực tiếp tại khuôn viên trường (thư viện, sảnh nhà học, căng tin) để kiểm tra sách và trả tiền mặt trực tiếp.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option C: Direct Bank Transfer -->
+                    <div class="checkout-method-card mb-3 p-3 border rounded-3 position-relative"
+                         onclick="document.getElementById('methodBank').checked = true;"
+                         style="cursor: pointer; transition: var(--transition-base);">
+                        <div class="form-check d-flex align-items-start gap-3">
+                            <input class="form-check-input mt-1" type="radio" th:field="*{paymentMethod}"
+                                   id="methodBank" value="BANK_TRANSFER"/>
+                            <div>
+                                <label class="form-check-label fw-bold text-dark mb-1" for="methodBank">
+                                    <i class="fa-solid fa-building-columns me-1 text-success"></i>
+                                    Chuyển khoản trực tiếp giữa hai bên
+                                </label>
+                                <p class="text-muted small mb-0">
+                                    Hai bên chủ động liên hệ trao đổi số tài khoản ngân hàng để chuyển khoản trực tiếp sau khi người bán chấp nhận đơn.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Meetup Details & Contact Info -->
+                <div class="bl-form-card mb-4 shadow-sm">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: var(--color-gray-900);">
+                        <span class="badge bg-primary rounded-circle" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">2</span>
+                        Thông tin liên hệ &amp; Điểm hẹn dự kiến
+                    </h5>
+
+                    <!-- Contact Phone -->
+                    <div class="mb-3">
+                        <label for="contactPhone" class="form-label fw-semibold">Số điện thoại / Zalo liên hệ</label>
+                        <input type="tel" class="form-control" id="contactPhone" th:field="*{contactPhone}"
+                               placeholder="VD: 0987654321" style="border-radius: var(--radius-md);"/>
+                        <small class="text-muted">Người bán sẽ sử dụng số này để gọi điện hoặc nhắn tin Zalo hẹn giờ giao sách.</small>
+                    </div>
+
+                    <!-- Meetup Notes / Location Preferences -->
+                    <div class="mb-0">
+                        <label for="meetupNote" class="form-label fw-semibold">Địa điểm hẹn &amp; Khung giờ thuận tiện (Tùy chọn)</label>
+                        <textarea class="form-control" id="meetupNote" th:field="*{meetupNote}" rows="3"
+                                  placeholder="VD: Em có thể gặp ở Thư viện ĐH FPT tầng 1 các buổi chiều thứ 3, thứ 5..."
+                                  style="border-radius: var(--radius-md);"></textarea>
+                        <small class="text-muted">Gợi ý địa điểm quen thuộc trong trường để cả hai bên dễ tìm nhau.</small>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right: Order Items & Confirmation -->
+            <div class="col-lg-5">
+                <div class="bl-form-card shadow-sm">
+                    <h5 class="fw-bold mb-3" style="color: var(--color-gray-900);">Sách trong đơn này</h5>
+
+                    <!-- Item list -->
+                    <div class="mb-4">
+                        <div th:each="item : ${cart.items}" class="d-flex align-items-center gap-3 py-2 border-bottom">
+                            <div style="width: 44px; height: 60px; flex-shrink: 0; background: #f8fafc; border: 1px solid var(--color-gray-200); border-radius: var(--radius-sm); overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 2px;">
+                                <img th:if="${item.product.imageUrl != null and !#strings.isEmpty(item.product.imageUrl)}"
+                                     th:src="${item.product.imageUrl}"
+                                     th:alt="${item.product.title}"
+                                     loading="lazy"
+                                     style="max-width: 100%; max-height: 100%; object-fit: contain;"
+                                     onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
+                                <span th:if="${item.product.imageUrl == null or #strings.isEmpty(item.product.imageUrl)}"
+                                      class="text-muted"><i class="fa-solid fa-book-open"></i></span>
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                                <div class="fw-semibold text-truncate" th:text="${item.product.title}">Tên sách</div>
+                                <small class="text-muted d-block" th:text="'Người bán: ' + ${item.product.seller.fullName}"></small>
+                                <small class="text-muted" th:text="'Khu vực: ' + ${item.product.campus}"></small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-dark" th:text="${@formatUtils.formatVnd(item.subtotal)}">0 ₫</div>
+                                <small class="text-muted" th:text="'SL: ' + ${item.quantity}">SL: 1</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing breakdown -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Tổng tiền sách</span>
+                        <span class="fw-semibold" th:text="${@formatUtils.formatVnd(totalAmount)}">0 ₫</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                        <span class="text-muted">Phí kết nối nền tảng</span>
+                        <span class="text-success fw-semibold">MIỄN PHÍ</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fs-5 fw-bold text-dark">Tổng thanh toán</span>
+                        <span class="fs-3 fw-bold text-primary"
+                              th:text="${@formatUtils.formatVnd(totalAmount)}">0 ₫</span>
+                    </div>
+
+                    <!-- Place Order Button -->
+                    <button type="submit" class="btn-primary-bl w-100 justify-content-center py-3 fs-6">
+                        <i class="fa-solid fa-lock me-2"></i>Xác nhận đặt mua
+                    </button>
+
+                    <p class="text-center text-muted small mt-3 mb-0">
+                        Bằng cách bấm đặt mua, bạn đồng ý phối hợp cùng bạn sinh viên bán sách để kiểm tra và nhận sách theo lịch hẹn.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </form>
+
+</main>
+
+<footer th:replace="~{layout/layout :: footer}"></footer>
+<th:block th:replace="~{layout/layout :: scripts}"></th:block>
+
+
+
+</body>
+</html>

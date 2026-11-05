@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Giỏ hàng')}"></head>
+<body>
+<nav th:replace="~{layout/layout :: navbar}"></nav>
+
+<main class="page-container page-content">
+
+    <!-- Flash messages -->
+    <div th:if="${successMessage}" class="alert-success-bl mb-4">
+        <i class="fa-solid fa-circle-check"></i>
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert-error-bl mb-4">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Unavailable items warning -->
+    <div th:if="${hasUnavailableItems}" class="alert-warning-bl mb-4">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>
+            <strong>Lưu ý:</strong> Một hoặc nhiều cuốn sách trong giỏ hàng không còn sẵn sàng (đã được bán hoặc người bán tạm ẩn). Vui lòng xóa những sản phẩm này để tiếp tục thanh toán.
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav class="bl-breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/}">Trang chủ</a>
+        <span class="separator">/</span>
+        <span class="current">Giỏ hàng của bạn</span>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title mb-1">Giỏ hàng</h1>
+            <p class="text-muted mb-0">Kiểm tra lại danh sách sách đã chọn trước khi tiến hành đặt hàng.</p>
+        </div>
+        <a th:href="@{/books}" class="btn-outline-bl d-none d-md-inline-flex">
+            <i class="fa-solid fa-arrow-left me-2"></i>Tiếp tục mua sắm
+        </a>
+    </div>
+
+    <!-- Active Cart items -->
+    <div th:if="${cart != null and cart.items != null and not #lists.isEmpty(cart.items)}" class="row g-4">
+
+        <!-- Items list -->
+        <div class="col-lg-8">
+            <div class="bl-form-card p-0 overflow-hidden shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-gray-500);">
+                                <th class="ps-4 py-3" style="width: 50%;">Sách &amp; Giáo trình</th>
+                                <th class="py-3">Đơn giá</th>
+                                <th class="py-3">Số lượng</th>
+                                <th class="py-3 text-end">Thành tiền</th>
+                                <th class="pe-4 py-3 text-end" style="width: 80px;">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item : ${cart.items}">
+                                <td class="ps-4 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <!-- Thumbnail -->
+                                        <a th:href="@{/books/{id}(id=${item.product.id})}"
+                                           style="width: 54px; height: 72px; flex-shrink: 0; background: #f8fafc; border: 1px solid var(--color-gray-200); border-radius: var(--radius-sm); overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 2px;">
+                                            <img th:if="${item.product.imageUrl != null and !#strings.isEmpty(item.product.imageUrl)}"
+                                                 th:src="${item.product.imageUrl}"
+                                                 th:alt="${item.product.title}"
+                                                 loading="lazy"
+                                                 style="max-width: 100%; max-height: 100%; object-fit: contain;"
+                                                 onerror="this.onerror=null; this.src='/images/book-placeholder.svg';"/>
+                                            <span th:if="${item.product.imageUrl == null or #strings.isEmpty(item.product.imageUrl)}"
+                                                  class="text-muted"><i class="fa-solid fa-book-open"></i></span>
+                                        </a>
+
+                                        <!-- Book info -->
+                                        <div>
+                                            <a th:href="@{/books/{id}(id=${item.product.id})}"
+                                               class="fw-bold text-dark text-decoration-none d-block hover-primary"
+                                               th:text="${item.product.title}">Tên sách</a>
+                                            <small class="text-muted d-block" th:if="${item.product.author != null}"
+                                                   th:text="'Tác giả: ' + ${item.product.author}"></small>
+                                            <div class="d-flex align-items-center gap-2 mt-1">
+                                                <span class="badge-condition"
+                                                      th:classappend="${item.product.condition.name()}"
+                                                      th:text="${item.product.condition.displayName}"
+                                                      style="font-size: 0.7rem; padding: 2px 6px;"></span>
+                                                <span class="text-muted" style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-user me-1"></i>
+                                                    <a th:href="@{/profile/seller/{id}(id=${item.product.seller.id})}"
+                                                       class="text-muted text-decoration-none"
+                                                       th:text="${item.product.seller.fullName}">Người bán</a>
+                                                </span>
+                                            </div>
+
+                                            <!-- Status notice if not AVAILABLE -->
+                                            <div th:if="${item.product.status.name() != 'AVAILABLE'}" class="mt-1">
+                                                <span class="badge bg-danger" style="font-size: 0.7rem;"
+                                                      th:text="'Không còn sẵn sàng (' + ${item.product.status.displayName} + ')'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="fw-semibold" th:text="${@formatUtils.formatVnd(item.product.price)}">0 ₫</span>
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-light text-dark border px-2 py-1" th:text="${item.quantity}">1</span>
+                                </td>
+                                <td class="py-3 text-end">
+                                    <span class="fw-bold text-primary" th:text="${@formatUtils.formatVnd(item.subtotal)}">0 ₫</span>
+                                </td>
+                                <td class="pe-4 py-3 text-end">
+                                    <form th:action="@{/cart/remove}" method="post" class="d-inline">
+                                        <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                title="Xóa khỏi giỏ" aria-label="Xóa khỏi giỏ">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer actions inside card -->
+                <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center">
+                    <form th:action="@{/cart/clear}" method="post">
+                        <button type="submit" class="btn btn-sm btn-link text-danger text-decoration-none"
+                                onclick="return confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?');">
+                            <i class="fa-solid fa-trash me-1"></i>Xóa sạch giỏ hàng
+                        </button>
+                    </form>
+                    <a th:href="@{/books}" class="text-muted small text-decoration-none">
+                        <i class="fa-solid fa-plus me-1"></i>Thêm sách khác
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary Column -->
+        <div class="col-lg-4">
+            <div class="bl-form-card shadow-sm">
+                <h5 class="fw-bold mb-3" style="color: var(--color-gray-900);">Tóm tắt đơn hàng</h5>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Tổng số món (<span th:text="${cart.itemCount}">0</span> cuốn)</span>
+                    <span class="fw-semibold" th:text="${@formatUtils.formatVnd(totalAmount)}">0 ₫</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                    <span class="text-muted">Phí nền tảng</span>
+                    <span class="text-success fw-semibold">MIỄN PHÍ</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="fs-5 fw-bold text-dark">Tổng tạm tính</span>
+                    <span class="fs-4 fw-bold text-primary"
+                          th:text="${@formatUtils.formatVnd(totalAmount)}">0 ₫</span>
+                </div>
+
+                <!-- Checkout button -->
+                <div th:if="${!hasUnavailableItems}">
+                    <a th:href="@{/checkout}"
+                       class="btn-primary-bl w-100 justify-content-center py-3 fs-6">
+                        Tiến hành thanh toán <i class="fa-solid fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+                <div th:if="${hasUnavailableItems}">
+                    <button class="btn btn-secondary w-100 py-3 fs-6" disabled>
+                        Không thể đặt hàng do có sách hết hàng
+                    </button>
+                    <small class="text-danger d-block text-center mt-2">
+                        Vui lòng xóa các sản phẩm không còn sẵn sàng để tiếp tục.
+                    </small>
+                </div>
+
+                <!-- Trust banner -->
+                <div class="mt-4 p-3 rounded" style="background: #eef2ff; border: 1px solid #c7d2fe; font-size: 0.825rem; color: #3730a3;">
+                    <div class="fw-bold mb-1"><i class="fa-solid fa-shield-halved me-1 text-primary"></i> Giao dịch an toàn &amp; Bảo vệ người mua</div>
+                    <div>Hỗ trợ thanh toán tạm giữ bảo đảm qua sàn BookLoop &ndash; Tự động giải ngân về tài khoản ngân hàng người bán khi nhận sách thành công.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${cart == null or cart.items == null or #lists.isEmpty(cart.items)}" class="empty-state">
+        <div class="empty-icon">🛒</div>
+        <h3>Giỏ hàng của bạn đang trống</h3>
+        <p class="text-muted">Bạn chưa chọn cuốn sách nào. Hãy dạo quanh chợ sách BookLoop để tìm giáo trình giá tốt nhé!</p>
+        <a th:href="@{/books}" class="btn-primary-bl mt-3">
+            <i class="fa-solid fa-book-open me-2"></i>Duyệt sách đang bán
+        </a>
+    </div>
+
+</main>
+
+<footer th:replace="~{layout/layout :: footer}"></footer>
+<th:block th:replace="~{layout/layout :: scripts}"></th:block>
+</body>
+</html>

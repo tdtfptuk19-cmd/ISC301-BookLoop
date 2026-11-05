@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/layout :: head(${isEdit} ? 'Edit Listing' : 'New Listing')}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head(${isEdit} ? 'Chỉnh sửa tin đăng' : 'Đăng bán sách mới')}"></head>
 <body>
 <nav th:replace="~{layout/layout :: navbar}"></nav>
 
@@ -8,22 +8,30 @@
 
     <!-- Breadcrumb -->
     <nav class="bl-breadcrumb" aria-label="Breadcrumb">
-        <a th:href="@{/my-listings}">My Listings</a>
+        <a th:href="@{/my-listings}">Tin đăng của tôi</a>
         <span class="separator">/</span>
-        <span class="current" th:text="${isEdit} ? 'Edit Listing' : 'New Listing'">Form</span>
+        <span class="current" th:text="${isEdit} ? 'Chỉnh sửa tin đăng' : 'Đăng bán sách mới'">Đăng tin</span>
     </nav>
 
     <div class="row justify-content-center">
         <div class="col-lg-9">
 
+            <!-- Promotion banner notice -->
+            <div th:unless="${isEdit}" class="alert alert-warning border-warning d-flex align-items-center mb-4">
+                <i class="fa-solid fa-bolt fs-4 me-3 text-warning"></i>
+                <div>
+                    <strong>Mẹo bán nhanh:</strong> Sau khi đăng tin, bạn có thể đăng ký <strong>Đẩy tin nổi bật</strong> chỉ với <span th:text="${@formatUtils.formatVnd(promotionFee != null ? promotionFee : 10000)}">10.000 ₫</span> trong vòng <span th:text="${durationDays != null ? durationDays : 7}">7</span> ngày để tiếp cận sinh viên nhanh nhất!
+                </div>
+            </div>
+
             <!-- Page header -->
             <div class="mb-4">
                 <h1 class="section-title">
                     <i th:class="${isEdit} ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-plus-circle'"
-                       class="me-2" style="color:var(--color-primary);"></i>
-                    <span th:text="${isEdit} ? 'Edit Listing' : 'Create New Listing'">Form</span>
+                       class="me-2 text-primary"></i>
+                    <span th:text="${isEdit} ? 'Chỉnh sửa thông tin tin đăng' : 'Đăng bán sách giáo trình mới'">Đăng tin</span>
                 </h1>
-                <p class="text-muted" th:text="${isEdit} ? 'Update your book listing details.' : 'Fill in the details about the textbook you want to sell.'"></p>
+                <p class="text-muted" th:text="${isEdit} ? 'Cập nhật lại thông tin cuốn sách của bạn.' : 'Điền thông tin chi tiết về cuốn sách hoặc giáo trình bạn muốn sang nhượng cho bạn bè.'"></p>
             </div>
 
             <div class="bl-form-card">
@@ -31,18 +39,33 @@
                       method="post" th:object="${productForm}" novalidate>
 
                     <!-- ============ SECTION: Book Information ============ -->
-                    <h5 class="mb-3" style="font-weight:700; color:var(--color-gray-700);">
-                        <i class="fa-solid fa-book me-2" style="color:var(--color-primary);"></i>
-                        Book Information
+                    <h5 class="mb-3 fw-bold text-dark">
+                        <i class="fa-solid fa-book me-2 text-primary"></i>
+                        Thông tin sách &amp; Giáo trình
                     </h5>
+
+                    <!-- Academic book link dropdown -->
+                    <div class="bl-form-group mb-3" th:if="${academicBooks != null and not #lists.isEmpty(academicBooks)}">
+                        <label for="academicBookId" class="fw-semibold">
+                            Khớp với giáo trình chính thức (Hòa Lạc)
+                            <span class="text-muted small fw-normal">(Không bắt buộc - Giúp sách hiển thị trong mục lục trường)</span>
+                        </label>
+                        <select id="academicBookId" th:field="*{academicBookId}" class="form-select">
+                            <option value="">-- Không liên kết / Sách tham khảo tự do --</option>
+                            <option th:each="ab : ${academicBooks}"
+                                    th:value="${ab.id}"
+                                    th:text="${ab.title + ' (' + (ab.author != null ? ab.author : 'NXB') + ')'}">
+                            </option>
+                        </select>
+                    </div>
 
                     <!-- Title -->
                     <div class="bl-form-group">
-                        <label for="title">Book Title <span class="text-danger">*</span></label>
+                        <label for="title" class="fw-semibold">Tiêu đề tin đăng / Tên sách <span class="text-danger">*</span></label>
                         <input type="text" id="title" th:field="*{title}"
-                               class="bl-form-control"
-                               th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
-                               placeholder="e.g. Head First Java, 2nd Edition"/>
+                                class="bl-form-control"
+                                th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
+                                placeholder="VD: Giáo trình Cấu trúc dữ liệu và giải thuật (CSD201)..."/>
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('title')}">
                             <i class="fa-solid fa-triangle-exclamation me-1"></i>
                             <span th:errors="*{title}"></span>
@@ -53,18 +76,18 @@
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <div class="bl-form-group mb-0">
-                                <label for="author">Author</label>
+                                <label for="author" class="fw-semibold">Tác giả</label>
                                 <input type="text" id="author" th:field="*{author}"
                                        class="bl-form-control"
-                                       placeholder="e.g. Kathy Sierra"/>
+                                       placeholder="VD: Nguyễn Văn A, Robert C. Martin..."/>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="bl-form-group mb-0">
-                                <label for="publisher">Publisher</label>
+                                <label for="publisher" class="fw-semibold">Nhà xuất bản</label>
                                 <input type="text" id="publisher" th:field="*{publisher}"
                                        class="bl-form-control"
-                                       placeholder="e.g. O'Reilly Media"/>
+                                       placeholder="VD: NXB Giáo Dục, NXB ĐHQGHN, O'Reilly..."/>
                             </div>
                         </div>
                     </div>
@@ -73,60 +96,66 @@
                     <div class="row g-3 mt-0">
                         <div class="col-sm-4">
                             <div class="bl-form-group mb-0">
-                                <label for="edition">Edition</label>
+                                <label for="edition" class="fw-semibold">Tái bản / Phiên bản</label>
                                 <input type="text" id="edition" th:field="*{edition}"
-                                       class="bl-form-control" placeholder="e.g. 2nd"/>
+                                       class="bl-form-control" placeholder="VD: Tái bản lần 2, 2023"/>
                             </div>
                         </div>
                         <div class="col-sm-4">
                             <div class="bl-form-group mb-0">
-                                <label for="isbn">ISBN</label>
+                                <label for="isbn" class="fw-semibold">Mã ISBN</label>
                                 <input type="text" id="isbn" th:field="*{isbn}"
-                                       class="bl-form-control" placeholder="e.g. 978-0596009205"/>
+                                       class="bl-form-control" placeholder="VD: 978-604-0-12345-6"/>
                             </div>
                         </div>
                         <div class="col-sm-4">
                             <div class="bl-form-group mb-0">
-                                <label for="courseCode">Course Code</label>
+                                <label for="courseCode" class="fw-semibold">Mã học phần</label>
                                 <input type="text" id="courseCode" th:field="*{courseCode}"
-                                       class="bl-form-control" placeholder="e.g. CS101"/>
+                                       class="bl-form-control text-uppercase" placeholder="VD: CSD201, MAT101"/>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Category -->
+                    <!-- Category Dropdown from SQL Server -->
                     <div class="bl-form-group mt-3">
-                        <label for="category">Category</label>
-                        <input type="text" id="category" th:field="*{category}"
-                               class="bl-form-control"
-                               placeholder="e.g. Computer Science, Business, Mathematics"/>
+                        <label for="category" class="fw-semibold">Danh mục thể loại <span class="text-danger">*</span></label>
+                        <select id="category" th:field="*{category}" class="bl-form-control form-select" required>
+                            <option value="">-- Chọn thể loại sách --</option>
+                            <option th:each="cat : ${categories}"
+                                    th:value="${cat.name}"
+                                    th:text="${cat.name}"
+                                    th:selected="${productForm.category == cat.name}">
+                            </option>
+                        </select>
+                        <div class="form-text text-muted small">Thể loại được tải động từ cơ sở dữ liệu để phân loại chính xác khi tìm kiếm.</div>
                     </div>
 
                     <!-- Description -->
                     <div class="bl-form-group">
-                        <label for="description">Description</label>
+                        <label for="description" class="fw-semibold">Mô tả chi tiết</label>
                         <textarea id="description" th:field="*{description}"
                                   class="bl-form-control" rows="4"
-                                  placeholder="Describe the condition, highlights, or any notes about this book..."></textarea>
+                                  placeholder="Mô tả về sách: nội dung, có kèm đĩa/tài liệu ôn tập không, lý do nhượng lại..."></textarea>
                     </div>
 
                     <hr class="my-4" style="border-color:var(--color-gray-100);"/>
 
                     <!-- ============ SECTION: Pricing & Condition ============ -->
-                    <h5 class="mb-3" style="font-weight:700; color:var(--color-gray-700);">
-                        <i class="fa-solid fa-tags me-2" style="color:var(--color-primary);"></i>
-                        Pricing &amp; Condition
+                    <h5 class="mb-3 fw-bold text-dark">
+                        <i class="fa-solid fa-tags me-2 text-primary"></i>
+                        Giá bán &amp; Tình trạng thực tế
                     </h5>
 
                     <!-- Price + Condition -->
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <div class="bl-form-group mb-0">
-                                <label for="price">Asking Price ($) <span class="text-danger">*</span></label>
+                                <label for="price" class="fw-semibold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
                                 <input type="number" id="price" th:field="*{price}"
                                        class="bl-form-control"
                                        th:classappend="${#fields.hasErrors('price')} ? 'is-invalid' : ''"
-                                       placeholder="0.00" min="0" step="0.01"/>
+                                       placeholder="VD: 45000" min="0" step="1000"/>
                                 <div class="text-danger small mt-1" th:if="${#fields.hasErrors('price')}">
                                     <i class="fa-solid fa-triangle-exclamation me-1"></i>
                                     <span th:errors="*{price}"></span>
@@ -135,11 +164,11 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="bl-form-group mb-0">
-                                <label for="condition">Condition <span class="text-danger">*</span></label>
+                                <label for="condition" class="fw-semibold">Tình trạng sách <span class="text-danger">*</span></label>
                                 <select id="condition" th:field="*{condition}"
                                         class="bl-form-control"
                                         th:classappend="${#fields.hasErrors('condition')} ? 'is-invalid' : ''">
-                                    <option value="">Select condition...</option>
+                                    <option value="">-- Chọn tình trạng --</option>
                                     <option th:each="c : ${conditions}"
                                             th:value="${c.name()}"
                                             th:text="${c.displayName}"></option>
@@ -154,29 +183,29 @@
 
                     <!-- Defect notes -->
                     <div class="bl-form-group mt-3">
-                        <label for="defectNotes">
-                            Defect Notes <span class="text-muted small">(optional — describe any damage or wear)</span>
+                        <label for="defectNotes" class="fw-semibold">
+                            Ghi chú hao mòn / khuyết điểm <span class="text-muted small fw-normal">(nếu có - mô tả vết gập, highlight, mất bìa...)</span>
                         </label>
                         <textarea id="defectNotes" th:field="*{defectNotes}"
                                   class="bl-form-control" rows="3"
-                                  placeholder="e.g. Minor scratches on the cover, some highlighting on pages 10-25..."></textarea>
+                                  placeholder="VD: Bìa hơi quăn góc, trang 15 có highlight vàng, còn lại mới nguyên..."></textarea>
                     </div>
 
                     <hr class="my-4" style="border-color:var(--color-gray-100);"/>
 
                     <!-- ============ SECTION: Location & Image ============ -->
-                    <h5 class="mb-3" style="font-weight:700; color:var(--color-gray-700);">
-                        <i class="fa-solid fa-location-dot me-2" style="color:var(--color-primary);"></i>
-                        Meetup &amp; Image
+                    <h5 class="mb-3 fw-bold text-dark">
+                        <i class="fa-solid fa-location-dot me-2 text-primary"></i>
+                        Địa điểm giao dịch &amp; Hình ảnh
                     </h5>
 
                     <!-- Campus -->
                     <div class="bl-form-group">
-                        <label for="campus">Campus / Meetup Location <span class="text-danger">*</span></label>
+                        <label for="campus" class="fw-semibold">Khu vực / Điểm hẹn sinh viên <span class="text-danger">*</span></label>
                         <input type="text" id="campus" th:field="*{campus}"
                                class="bl-form-control"
                                th:classappend="${#fields.hasErrors('campus')} ? 'is-invalid' : ''"
-                               placeholder="e.g. Main Campus Library, Dorm Block A"/>
+                               placeholder="VD: ĐH FPT Hòa Lạc, KTX VNU Hòa Lạc, Học viện Tài chính CS2..."/>
                         <div class="text-danger small mt-1" th:if="${#fields.hasErrors('campus')}">
                             <i class="fa-solid fa-triangle-exclamation me-1"></i>
                             <span th:errors="*{campus}"></span>
@@ -185,30 +214,31 @@
 
                     <!-- Image URL + preview -->
                     <div class="bl-form-group">
-                        <label for="imageUrl">
-                            Book Cover Image URL <span class="text-muted small">(optional)</span>
+                        <label for="imageUrl" class="fw-semibold">
+                            Đường dẫn ảnh bìa sách <span class="text-muted small fw-normal">(tùy chọn)</span>
                         </label>
                         <input type="url" id="imageUrl" th:field="*{imageUrl}"
                                class="bl-form-control"
-                               placeholder="https://example.com/book-cover.jpg"/>
-                        <small class="text-muted">Paste a URL to a book cover image. A preview will appear below.</small>
+                               placeholder="https://example.com/anh-sach.jpg"/>
+                        <small class="text-muted">Nhập liên kết ảnh bìa sách rõ ràng để người mua dễ nhận biết.</small>
                         <div class="mt-3">
                             <img id="imagePreview" src=""
-                                 alt="Image preview"
-                                 style="display:none; max-height:180px; border-radius:var(--radius-lg);
-                                        box-shadow:var(--shadow-md); border:2px solid var(--color-gray-200);"/>
+                                 alt="Ảnh xem trước bìa sách"
+                                 style="display:none; max-height:180px; max-width:200px; object-fit:contain; border-radius:var(--radius-md);
+                                        box-shadow:var(--shadow-md); border:1px solid var(--color-gray-200); background:#f8fafc; padding:4px;"
+                                 onerror="this.style.display='none';"/>
                         </div>
                     </div>
 
                     <!-- Status (only on edit) -->
                     <div class="bl-form-group" th:if="${isEdit}">
-                        <label for="status">Listing Status</label>
+                        <label for="status" class="fw-semibold">Trạng thái tin đăng</label>
                         <select id="status" th:field="*{status}" class="bl-form-control">
                             <option th:each="s : ${statuses}"
                                     th:value="${s.name()}"
                                     th:text="${s.displayName}"></option>
                         </select>
-                        <small class="text-muted">Change to "Sold" when completed, or "Hidden" to temporarily hide.</small>
+                        <small class="text-muted">Chuyển sang "Đã bán" khi bạn đã hoàn tất giao dịch với người mua.</small>
                     </div>
 
                     <hr class="my-4" style="border-color:var(--color-gray-100);"/>
@@ -219,11 +249,11 @@
                                 style="padding:0.75rem 2rem; font-size:1rem;">
                             <i th:class="${isEdit} ? 'fa-solid fa-floppy-disk' : 'fa-solid fa-paper-plane'"
                                class="me-2"></i>
-                            <span th:text="${isEdit} ? 'Update Listing' : 'Publish Listing'">Submit</span>
+                            <span th:text="${isEdit} ? 'Cập nhật tin đăng' : 'Đăng bán sách'">Xác nhận</span>
                         </button>
                         <a th:href="@{/my-listings}" class="btn-outline-bl"
                            style="padding:0.75rem 2rem; font-size:1rem;">
-                            Cancel
+                            Hủy bỏ
                         </a>
                     </div>
 

@@ -4,6 +4,7 @@ import com.bookloop.config.AuthenticatedUserResolver;
 import com.bookloop.dto.ProfileUpdateForm;
 import com.bookloop.entity.User;
 import com.bookloop.service.ProductService;
+import com.bookloop.service.ReviewService;
 import com.bookloop.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -13,7 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * Controller for viewing and updating the authenticated user's profile.
+ * Controller for viewing and updating the authenticated user's profile,
+ * as well as viewing public seller profiles with their reviews and ratings.
  */
 @Controller
 @RequestMapping("/profile")
@@ -21,12 +23,16 @@ public class ProfileController {
 
     private final UserService userService;
     private final ProductService productService;
+    private final ReviewService reviewService;
     private final AuthenticatedUserResolver authResolver;
 
-    public ProfileController(UserService userService, ProductService productService,
-                              AuthenticatedUserResolver authResolver) {
+    public ProfileController(UserService userService,
+                             ProductService productService,
+                             ReviewService reviewService,
+                             AuthenticatedUserResolver authResolver) {
         this.userService = userService;
         this.productService = productService;
+        this.reviewService = reviewService;
         this.authResolver = authResolver;
     }
 
@@ -73,14 +79,20 @@ public class ProfileController {
     }
 
     /**
-     * Shows a public seller profile page (accessible without authentication).
+     * Shows a public seller profile page with active listings, average rating,
+     * total review count, and buyer reviews.
      */
     @GetMapping("/seller/{sellerId}")
     public String showSellerProfile(@PathVariable Long sellerId, Model model) {
         User seller = userService.findById(sellerId)
                 .orElseThrow(() -> new IllegalArgumentException("Seller not found"));
+
         model.addAttribute("seller", seller);
         model.addAttribute("listings", productService.findBySellerId(sellerId));
+        model.addAttribute("avgRating", reviewService.getAverageRatingForSeller(sellerId));
+        model.addAttribute("reviewCount", reviewService.getReviewCountForSeller(sellerId));
+        model.addAttribute("reviews", reviewService.getReviewsForSeller(sellerId));
+
         return "profile/seller";
     }
 }

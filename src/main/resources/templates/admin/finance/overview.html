@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{admin/layout :: adminHead('Tổng quan tài chính & Thanh toán')}"></head>
+<body>
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <div th:replace="~{admin/layout :: sidebar('finance-overview')}"></div>
+
+    <!-- Main content -->
+    <main class="admin-main">
+        <!-- Topbar -->
+        <div class="admin-topbar">
+            <div class="page-heading"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Tổng quan tài chính &amp; Quản trị thanh toán</div>
+            <span class="admin-badge">Admin Finance</span>
+        </div>
+
+        <div class="admin-content">
+
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Time Filter Bar -->
+            <div class="stat-card mb-4 p-3 shadow-sm">
+                <form th:action="@{/admin/finance}" method="get" id="financeFilterForm">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="fw-bold small text-muted text-uppercase me-1"><i class="fa-solid fa-calendar-days me-1 text-primary"></i>Kỳ báo cáo:</span>
+                            <a th:href="@{/admin/finance(range='ALL')}"
+                               class="btn btn-sm"
+                               th:classappend="${selectedRange == 'ALL'} ? 'btn-primary' : 'btn-outline-secondary'">
+                               Toàn bộ
+                            </a>
+                            <a th:href="@{/admin/finance(range='TODAY')}"
+                               class="btn btn-sm"
+                               th:classappend="${selectedRange == 'TODAY'} ? 'btn-primary' : 'btn-outline-secondary'">
+                               Hôm nay
+                            </a>
+                            <a th:href="@{/admin/finance(range='LAST_7_DAYS')}"
+                               class="btn btn-sm"
+                               th:classappend="${selectedRange == 'LAST_7_DAYS'} ? 'btn-primary' : 'btn-outline-secondary'">
+                               7 ngày qua
+                            </a>
+                            <a th:href="@{/admin/finance(range='LAST_30_DAYS')}"
+                               class="btn btn-sm"
+                               th:classappend="${selectedRange == 'LAST_30_DAYS'} ? 'btn-primary' : 'btn-outline-secondary'">
+                               30 ngày qua
+                            </a>
+                            <a th:href="@{/admin/finance(range='THIS_MONTH')}"
+                               class="btn btn-sm"
+                               th:classappend="${selectedRange == 'THIS_MONTH'} ? 'btn-primary' : 'btn-outline-secondary'">
+                               Tháng này
+                            </a>
+                            <a th:href="@{/admin/finance(range='LAST_MONTH')}"
+                               class="btn btn-sm"
+                               th:classappend="${selectedRange == 'LAST_MONTH'} ? 'btn-primary' : 'btn-outline-secondary'">
+                               Tháng trước
+                            </a>
+                        </div>
+
+                        <!-- Custom Date Range Form -->
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <input type="hidden" name="range" value="CUSTOM"/>
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <span class="input-group-text bg-light text-muted small">Từ</span>
+                                <input type="date" name="startDate" th:value="${startDate}" class="form-control form-control-sm" required/>
+                            </div>
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <span class="input-group-text bg-light text-muted small">Đến</span>
+                                <input type="date" name="endDate" th:value="${endDate}" class="form-control form-control-sm" required/>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-filter me-1"></i>Lọc
+                            </button>
+                            <a th:href="@{/admin/finance}" class="btn btn-outline-secondary btn-sm" title="Đặt lại bộ lọc">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div th:if="${kpis.hasDateFilter()}" class="mt-2 small text-primary fw-medium">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Đang lọc số liệu tài chính từ ngày <strong th:text="${kpis.startDate}">01/01/2026</strong> đến ngày <strong th:text="${kpis.endDate}">31/01/2026</strong>.
+                    </div>
+                </form>
+            </div>
+
+            <!-- 8 KPI Metric Cards Grid -->
+            <div class="row g-3 mb-4">
+                <!-- 1. Total GMV -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-primary">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">1. GMV Giao Dịch</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary"><i class="fa-solid fa-cart-shopping"></i></span>
+                        </div>
+                        <div class="stat-value text-primary fs-4 fw-bold mb-1" th:text="${@formatUtils.formatVnd(kpis.totalGmv)}">0 ₫</div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Tổng giá trị hàng hóa thanh toán đủ điều kiện</div>
+                    </div>
+                </div>
+
+                <!-- 2. Platform Revenue -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-info">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">2. Doanh Thu Sàn</span>
+                            <span class="badge bg-info bg-opacity-10 text-info"><i class="fa-solid fa-percent"></i></span>
+                        </div>
+                        <div class="stat-value text-info fs-4 fw-bold mb-1" th:text="${@formatUtils.formatVnd(kpis.totalPlatformCommission)}">0 ₫</div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Doanh thu hoa hồng đã thực thu từ đơn hoàn tất</div>
+                    </div>
+                </div>
+
+                <!-- 3. Held Funds (Escrow) -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-warning">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">3. Tiền Tạm Giữ (Escrow)</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning"><i class="fa-solid fa-shield-halved"></i></span>
+                        </div>
+                        <div class="stat-value text-warning fs-4 fw-bold mb-1" th:text="${@formatUtils.formatVnd(kpis.totalHeldEscrow)}">0 ₫</div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Tiền đang bảo đảm chờ giao nhận sách thành công</div>
+                    </div>
+                </div>
+
+                <!-- 4. Seller Payout -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100 border-start border-4 border-success">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">4. Giải Ngân Người Bán</span>
+                            <span class="badge bg-success bg-opacity-10 text-success"><i class="fa-solid fa-building-columns"></i></span>
+                        </div>
+                        <div class="stat-value text-success fs-4 fw-bold mb-1" th:text="${@formatUtils.formatVnd(kpis.totalDisbursedPayouts)}">0 ₫</div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Tiền ròng đã giải ngân chuyển khoản về ngân hàng người bán</div>
+                    </div>
+                </div>
+
+                <!-- 5. Successful Payments -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">5. TT Thành Công</span>
+                            <span class="badge bg-success bg-opacity-10 text-success"><i class="fa-solid fa-circle-check"></i></span>
+                        </div>
+                        <div class="stat-value text-dark fs-4 fw-bold mb-1">
+                            <span th:text="${kpis.totalSuccessfulPayments}">0</span>
+                            <small class="fs-6 text-muted fw-normal">giao dịch</small>
+                        </div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Giao dịch thanh toán giữ tiền &amp; quyết toán</div>
+                    </div>
+                </div>
+
+                <!-- 6. Pending Payments -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">6. Chờ Thanh Toán</span>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="fa-solid fa-clock"></i></span>
+                        </div>
+                        <div class="stat-value text-secondary fs-4 fw-bold mb-1">
+                            <span th:text="${kpis.totalPendingPayments}">0</span>
+                            <small class="fs-6 text-muted fw-normal">đang chờ</small>
+                        </div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Tổng: <span class="fw-semibold text-dark" th:text="${@formatUtils.formatVnd(kpis.totalPendingPaymentsAmount)}">0 ₫</span></div>
+                    </div>
+                </div>
+
+                <!-- 7. Refunds -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">7. Hoàn Tiền (Refunds)</span>
+                            <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-rotate-left"></i></span>
+                        </div>
+                        <div class="stat-value text-danger fs-4 fw-bold mb-1" th:text="${@formatUtils.formatVnd(kpis.totalRefunded)}">0 ₫</div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Đã hoàn trả <span th:text="${kpis.totalRefundsCount}">0</span> giao dịch hủy/tranh chấp</div>
+                    </div>
+                </div>
+
+                <!-- 8. Disputes -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="stat-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="stat-label fw-bold text-uppercase text-muted" style="font-size:0.75rem;">8. Tranh Chấp (Disputes)</span>
+                            <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                        </div>
+                        <div class="stat-value fs-4 fw-bold mb-1"
+                             th:classappend="${kpis.activeDisputesCount > 0} ? 'text-danger' : 'text-success'">
+                            <span th:text="${kpis.activeDisputesCount}">0</span>
+                            <small class="fs-6 text-muted fw-normal">cần xử lý</small>
+                        </div>
+                        <div class="small text-muted" style="font-size:0.75rem;">Tổng toàn bộ: <span th:text="${kpis.totalDisputesCount}">0</span> lượt khiếu nại</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration & Health Status Row -->
+            <div class="row g-4 mb-4">
+                <!-- Commission Configuration Card -->
+                <div class="col-lg-6">
+                    <div class="stat-card h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="fa-solid fa-percent text-primary me-2"></i>Cài đặt mức chiết khấu hoa hồng
+                            </h5>
+                            <span class="badge bg-success">Đang áp dụng</span>
+                        </div>
+                        <p class="small text-muted mb-3">
+                            Tỷ lệ hoa hồng nền tảng tự động trích lại khi người mua xác nhận nhận sách thành công và hệ thống thực hiện lệnh chi trả đối soát.
+                        </p>
+                        <form th:action="@{/admin/finance/commission-settings}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Tỷ lệ chiết khấu (%)</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.1" min="0" max="50" name="ratePercentage"
+                                               class="form-control" th:value="${commissionSetting.ratePercentage}" required/>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Phí cố định (VND)</label>
+                                    <div class="input-group">
+                                        <input type="number" step="1000" min="0" name="fixedFee"
+                                               class="form-control" th:value="${commissionSetting.fixedFee}" required/>
+                                        <span class="input-group-text">₫</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="submit" class="btn btn-primary fw-semibold btn-sm px-4">
+                                        <i class="fa-solid fa-floppy-disk me-1"></i>Lưu cấu hình phí mới
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Reconciliation Health Status Widget -->
+                <div class="col-lg-6">
+                    <div class="stat-card h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="fa-solid fa-scale-balanced text-warning me-2"></i>Tình trạng đối soát tài chính
+                            </h5>
+                            <a th:href="@{/admin/finance/reconciliation}" class="btn btn-sm btn-outline-primary">
+                                Chạy đối soát chi tiết &rarr;
+                            </a>
+                        </div>
+                        <div th:if="${reconciliation.discrepancyCount == 0}" class="alert alert-success d-flex align-items-center mb-3">
+                            <i class="fa-solid fa-circle-check fs-4 me-3 text-success"></i>
+                            <div>
+                                <strong class="text-success">Hệ thống cân đối hoàn hảo:</strong>
+                                <div class="small">Số dư tiền tạm giữ khớp chính xác 100% với các đơn hàng đang giao dịch. Không có sai lệch dòng tiền.</div>
+                            </div>
+                        </div>
+                        <div th:if="${reconciliation.discrepancyCount > 0}" class="alert alert-danger d-flex align-items-center mb-3">
+                            <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-danger"></i>
+                            <div>
+                                <strong class="text-danger">Phát hiện <span th:text="${reconciliation.discrepancyCount}">1</span> điểm sai lệch!</strong>
+                                <div class="small">Vui lòng kiểm tra báo cáo đối soát ngay để xử lý bất thường số dư.</div>
+                            </div>
+                        </div>
+                        <div class="small text-muted d-flex justify-content-between">
+                            <div>Đơn hàng: <strong class="text-dark" th:text="${reconciliation.totalOrdersChecked}">0</strong></div>
+                            <div>Giao dịch thanh toán: <strong class="text-dark" th:text="${reconciliation.totalPaymentsChecked}">0</strong></div>
+                            <div>Lệnh giải ngân: <strong class="text-dark" th:text="${reconciliation.totalPayoutsChecked}">0</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Payments & Payouts Lists -->
+            <div class="row g-4">
+                <!-- Recent Payments -->
+                <div class="col-lg-6">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-credit-card me-2 text-primary"></i>Giao dịch thanh toán gần nhất</h6>
+                            <a th:href="@{/admin/finance/payments}" class="small text-primary text-decoration-none fw-semibold">Xem tất cả &rarr;</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr class="small text-muted">
+                                        <th>Mã tham chiếu</th>
+                                        <th>Số tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end">Thời gian</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentPayments)}">
+                                        <td colspan="4" class="text-center py-3 text-muted small">Chưa có giao dịch thanh toán</td>
+                                    </tr>
+                                    <tr th:each="tx : ${recentPayments}">
+                                        <td class="font-monospace small fw-bold" th:text="${tx.merchantReference}">PAY-XXXX</td>
+                                        <td class="fw-bold text-dark small" th:text="${@formatUtils.formatVnd(tx.amount)}">0 ₫</td>
+                                        <td>
+                                            <span class="badge bg-primary" th:text="${tx.paymentStatus.name()}">HELD</span>
+                                        </td>
+                                        <td class="text-end small text-muted" th:text="${#temporals.format(tx.createdAt, 'HH:mm dd/MM')}">00:00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Payouts -->
+                <div class="col-lg-6">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-hand-holding-dollar me-2 text-success"></i>Giải ngân người bán gần nhất</h6>
+                            <a th:href="@{/admin/finance/payouts}" class="small text-primary text-decoration-none fw-semibold">Xem tất cả &rarr;</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr class="small text-muted">
+                                        <th>Mã lệnh</th>
+                                        <th>Người bán</th>
+                                        <th>Thực nhận</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentPayouts)}">
+                                        <td colspan="4" class="text-center py-3 text-muted small">Chưa có lệnh giải ngân</td>
+                                    </tr>
+                                    <tr th:each="p : ${recentPayouts}">
+                                        <td class="font-monospace small fw-bold" th:text="${p.idempotencyKey}">KEY-XXXX</td>
+                                        <td class="small" th:text="${p.seller != null ? p.seller.fullName : '—'}">Người bán</td>
+                                        <td class="fw-bold text-success small" th:text="${@formatUtils.formatVnd(p.amount)}">0 ₫</td>
+                                        <td>
+                                            <span class="badge bg-success" th:text="${p.status.displayName}">PAID</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{admin/layout :: adminScripts}"></th:block>
+</body>
+</html>

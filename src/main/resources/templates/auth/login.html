@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/layout :: head('Sign In')}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/layout :: head('Đăng nhập')}"></head>
 <body>
 <nav th:replace="~{layout/layout :: navbar}"></nav>
 
@@ -17,11 +17,11 @@
                         🔐
                     </div>
                 </div>
-                <h1 class="section-title">Welcome back!</h1>
-                <p class="text-muted">Sign in to your BookLoop account.</p>
+                <h1 class="section-title">Chào mừng trở lại!</h1>
+                <p class="text-muted">Đăng nhập tài khoản sinh viên BookLoop.</p>
             </div>
 
-            <div class="bl-form-card">
+            <div class="bl-form-card shadow-sm">
 
                 <!-- Success from registration -->
                 <div th:if="${successMessage}" class="alert-success-bl alert-auto-dismiss mb-4">
@@ -32,37 +32,32 @@
                 <!-- Login error -->
                 <div th:if="${param.error}" class="alert-error-bl mb-4">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>Invalid email or password. Please try again.</span>
+                    <span>Email hoặc mật khẩu không chính xác. Vui lòng thử lại.</span>
                 </div>
 
                 <!-- Logout success -->
                 <div th:if="${param.logout}" class="alert-success-bl alert-auto-dismiss mb-4">
                     <i class="fa-solid fa-circle-check"></i>
-                    <span>You have been signed out successfully.</span>
+                    <span>Bạn đã đăng xuất tài khoản thành công.</span>
                 </div>
 
-                <!--
-                    Spring Security processes this form at /login (POST).
-                    The username parameter is mapped to the email field via our UserDetailsService.
-                    Thymeleaf automatically adds the CSRF hidden field when using th:action.
-                -->
                 <form th:action="@{/login}" method="post" id="loginForm">
 
-                    <!-- Email (Spring Security calls this "username") -->
+                    <!-- Email (username) -->
                     <div class="bl-form-group">
-                        <label for="username">Student Email</label>
+                        <label for="username" class="fw-semibold">Email sinh viên / Email đăng ký</label>
                         <input type="email" id="username" name="username"
                                class="bl-form-control"
-                               placeholder="your.email@university.edu"
+                               placeholder="VD: student@fpt.edu.vn"
                                autocomplete="email" required/>
                     </div>
 
                     <!-- Password -->
                     <div class="bl-form-group">
-                        <label for="password">Password</label>
+                        <label for="password" class="fw-semibold">Mật khẩu</label>
                         <input type="password" id="password" name="password"
                                class="bl-form-control"
-                               placeholder="Your password"
+                               placeholder="Mật khẩu của bạn"
                                autocomplete="current-password" required/>
                     </div>
 
@@ -70,16 +65,122 @@
                     <button type="submit" id="loginBtn"
                             class="btn-primary-bl w-100 justify-content-center mt-2"
                             style="padding: 0.75rem 1.5rem; font-size: 1rem;">
-                        <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+                        <i class="fa-solid fa-right-to-bracket me-2"></i>Đăng nhập
                     </button>
                 </form>
 
                 <!-- Register link -->
-                <p class="text-center mt-4 text-muted" style="font-size:0.875rem;">
-                    Don't have an account?
-                    <a th:href="@{/register}" style="font-weight:600;">Register for free</a>
+                <p class="text-center mt-4 text-muted mb-0" style="font-size:0.875rem;">
+                    Chưa có tài khoản?
+                    <a th:href="@{/register}" class="fw-bold text-primary">Đăng ký tài khoản miễn phí</a>
                 </p>
             </div>
+
+            <!-- Demo Accounts Card (1-Click Auto-Fill) -->
+            <div class="bl-form-card shadow-sm mt-3 p-3 border" style="background: #f8fafc; border-radius: var(--radius-lg, 12px);">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-bold text-dark small">
+                        <i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i>Tài khoản Demo thử nghiệm
+                    </span>
+                    <span class="badge bg-light text-muted border" style="font-size: 0.75rem;">Mật khẩu chung: <strong>123456</strong></span>
+                </div>
+                <p class="text-muted small mb-3" style="font-size: 0.8rem;">
+                    Nhấn vào nút <strong>"Chọn"</strong> bên cạnh bất kỳ tài khoản nào để tự động điền thông tin đăng nhập:
+                </p>
+
+                <div class="d-flex flex-column gap-2">
+                    <!-- 1. Admin -->
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded border bg-white shadow-xs">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-danger text-white px-2 py-1" style="font-size: 0.7rem;">ADMIN</span>
+                            <div>
+                                <div class="fw-bold text-dark small line-height-1">BookLoop Demo Admin</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">admin@bookloop.example</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 fw-semibold"
+                                onclick="fillDemoAccount('admin@bookloop.example', '123456')"
+                                title="Điền nhanh tài khoản Admin" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Chọn
+                        </button>
+                    </div>
+
+                    <!-- 2. Quang Huy (FPTU) -->
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded border bg-white shadow-xs">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary text-white px-2 py-1" style="font-size: 0.7rem;">FPTU</span>
+                            <div>
+                                <div class="fw-bold text-dark small line-height-1">Quang Huy (Người bán & Mua)</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">quanghuy@bookloop.example</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 fw-semibold"
+                                onclick="fillDemoAccount('quanghuy@bookloop.example', '123456')"
+                                title="Điền nhanh tài khoản Quang Huy" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Chọn
+                        </button>
+                    </div>
+
+                    <!-- 3. Vũ Tùng (VNU) -->
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded border bg-white shadow-xs">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.7rem;">VNU</span>
+                            <div>
+                                <div class="fw-bold text-dark small line-height-1">Vũ Tùng (Người bán & Mua)</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">vutung@bookloop.example</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-success py-1 px-2 fw-semibold"
+                                onclick="fillDemoAccount('vutung@bookloop.example', '123456')"
+                                title="Điền nhanh tài khoản Vũ Tùng" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Chọn
+                        </button>
+                    </div>
+
+                    <!-- 4. Đại Thành (AOF) -->
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded border bg-white shadow-xs">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.7rem;">AOF</span>
+                            <div>
+                                <div class="fw-bold text-dark small line-height-1">Đại Thành (Người bán & Mua)</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">daithanh@bookloop.example</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-warning text-dark py-1 px-2 fw-semibold"
+                                onclick="fillDemoAccount('daithanh@bookloop.example', '123456')"
+                                title="Điền nhanh tài khoản Đại Thành" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Chọn
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JavaScript helper for 1-Click Auto-Fill -->
+            <script>
+                function fillDemoAccount(email, password) {
+                    var usernameInput = document.getElementById('username');
+                    var passwordInput = document.getElementById('password');
+                    var loginBtn = document.getElementById('loginBtn');
+                    if (usernameInput && passwordInput) {
+                        usernameInput.value = email;
+                        passwordInput.value = password;
+
+                        // Visual highlight effect
+                        usernameInput.classList.add('border-primary');
+                        passwordInput.classList.add('border-primary');
+                        setTimeout(function() {
+                            usernameInput.classList.remove('border-primary');
+                            passwordInput.classList.remove('border-primary');
+                        }, 800);
+
+                        // Smoothly scroll and focus
+                        usernameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (loginBtn) {
+                            loginBtn.focus();
+                        }
+                    }
+                }
+            </script>
         </div>
     </div>
 </main>

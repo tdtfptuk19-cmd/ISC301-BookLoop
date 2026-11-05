@@ -34,10 +34,23 @@ public class ListingController {
 
     private final ProductService productService;
     private final AuthenticatedUserResolver authResolver;
+    private final com.bookloop.service.PromotionService promotionService;
+    private final com.bookloop.service.PlatformSettingService settingService;
+    private final com.bookloop.repository.AcademicBookRepository academicBookRepository;
+    private final com.bookloop.service.CategoryService categoryService;
 
-    public ListingController(ProductService productService, AuthenticatedUserResolver authResolver) {
+    public ListingController(ProductService productService,
+                             AuthenticatedUserResolver authResolver,
+                             com.bookloop.service.PromotionService promotionService,
+                             com.bookloop.service.PlatformSettingService settingService,
+                             com.bookloop.repository.AcademicBookRepository academicBookRepository,
+                             com.bookloop.service.CategoryService categoryService) {
         this.productService = productService;
         this.authResolver = authResolver;
+        this.promotionService = promotionService;
+        this.settingService = settingService;
+        this.academicBookRepository = academicBookRepository;
+        this.categoryService = categoryService;
     }
 
     // --- My Listings ---
@@ -53,10 +66,25 @@ public class ListingController {
     // --- Create Listing ---
 
     @GetMapping("/new")
-    public String showCreateForm(Model model) {
-        model.addAttribute("productForm", new ProductForm());
+    public String showCreateForm(@RequestParam(required = false) Long academicBookId, Model model) {
+        ProductForm form = new ProductForm();
+        if (academicBookId != null) {
+            academicBookRepository.findById(academicBookId).ifPresent(ab -> {
+                form.setTitle(ab.getTitle());
+                form.setAuthor(ab.getAuthor());
+                form.setIsbn(ab.getIsbn());
+                form.setCategory(ab.getCategory());
+                form.setImageUrl(ab.getCoverImageUrl());
+                form.setAcademicBookId(ab.getId());
+            });
+        }
+        model.addAttribute("productForm", form);
         model.addAttribute("conditions", Condition.values());
         model.addAttribute("statuses", ListingStatus.values());
+        model.addAttribute("academicBooks", academicBookRepository.findAll());
+        model.addAttribute("categories", categoryService.findAllActive());
+        model.addAttribute("promotionFee", settingService.getListingPromotionFee());
+        model.addAttribute("durationDays", settingService.getPromotionDurationDays());
         model.addAttribute("isEdit", false);
         return "listings/form";
     }
@@ -71,15 +99,69 @@ public class ListingController {
         if (bindingResult.hasErrors()) {
             model.addAttribute("conditions", Condition.values());
             model.addAttribute("statuses", ListingStatus.values());
+            model.addAttribute("academicBooks", academicBookRepository.findAll());
+            model.addAttribute("categories", categoryService.findAllActive());
+            model.addAttribute("promotionFee", settingService.getListingPromotionFee());
+            model.addAttribute("durationDays", settingService.getPromotionDurationDays());
             model.addAttribute("isEdit", false);
             return "listings/form";
         }
 
         User user = authResolver.getCurrentUser();
         Product saved = productService.createListing(form, user);
+
+        // Create initial promotion payment record
+        com.bookloop.entity.PromotionPayment payment = promotionService.createPaymentForNewListing(saved, user);
+
         redirectAttributes.addFlashAttribute("successMessage",
-                "Listing \"" + saved.getTitle() + "\" created successfully!");
-        return "redirect:/my-listings";
+                "Tin đăng \"" + saved.getTitle() + "\" đã được tạo thành công! Vui lòng hoàn tất thanh toán phí để được duyệt và hiển thị nổi bật.");
+        return "redirect:/my-listings/" + saved.getId() + "/promotion-payment";
+    }
+
+    // --- Promotion Payment Page for a Listing ---
+
+    @GetMapping("/{id}/promotion-payment")
+    public String showPromotionPaymentPage(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        User user = authResolver.getCurrentUser();
+        Product product = productService.findById(id);
+
+        if (!product.getSeller().getId().equals(user.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Bạn không có quyền truy cập thanh toán cho tin đăng này.");
+            return "redirect:/my-listings";
+        }
+
+        com.bookloop.entity.PromotionPayment payment = promotionService.getPaymentForListing(id);
+        if (payment == null) {
+            payment = promotionService.createPaymentForNewListing(product, user);
+        }
+
+        model.addAttribute("product", product);
+        model.addAttribute("payment", payment);
+        model.addAttribute("instructions", settingService.getPaymentInstructions());
+        return "listings/promotion-payment";
+    }
+
+    @PostMapping("/{id}/promotion-payment")
+    public String submitPromotionPayment(@PathVariable Long id,
+                                         @RequestParam(required = false) String transactionReference,
+                                         @RequestParam(required = false) String paymentNotes,
+                                         RedirectAttributes redirectAttributes) {
+        User user = authResolver.getCurrentUser();
+        Product product = productService.findById(id);
+
+        if (!product.getSeller().getId().equals(user.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Bạn không có quyền thao tác trên tin đăng này.");
+            return "redirect:/my-listings";
+        }
+
+        com.bookloop.entity.PromotionPayment payment = promotionService.getPaymentForListing(id);
+        if (payment != null && payment.getStatus() == com.bookloop.entity.PromotionPaymentStatus.PENDING) {
+            promotionService.submitPaymentProof(payment.getId(), transactionReference, paymentNotes, user);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã ghi nhận thông tin thanh toán! Quản trị viên sẽ kiểm tra và kích hoạt huy hiệu nổi bật trong thời gian sớm nhất.");
+        }
+
+        return "redirect:/my-listings/" + id + "/promotion-payment";
     }
 
     // --- Edit Listing ---
@@ -114,11 +196,24 @@ public class ListingController {
             form.setDefectNotes(product.getDefectNotes());
             form.setCampus(product.getCampus());
             form.setStatus(product.getStatus());
+            if (product.getAcademicBook() != null) {
+                form.setAcademicBookId(product.getAcademicBook().getId());
+            }
+
+            if (product.getCategoryRef() != null) {
+                form.setCategoryId(product.getCategoryRef().getId());
+                form.setCategory(product.getCategoryRef().getName());
+            } else if (product.getCategory() != null) {
+                form.setCategory(product.getCategory());
+                categoryService.findByName(product.getCategory()).ifPresent(c -> form.setCategoryId(c.getId()));
+            }
 
             model.addAttribute("productForm", form);
             model.addAttribute("productId", id);
             model.addAttribute("conditions", Condition.values());
             model.addAttribute("statuses", ListingStatus.values());
+            model.addAttribute("academicBooks", academicBookRepository.findAll());
+            model.addAttribute("categories", categoryService.findAllActive());
             model.addAttribute("isEdit", true);
             return "listings/form";
 
@@ -140,6 +235,7 @@ public class ListingController {
             model.addAttribute("productId", id);
             model.addAttribute("conditions", Condition.values());
             model.addAttribute("statuses", ListingStatus.values());
+            model.addAttribute("categories", categoryService.findAllActive());
             model.addAttribute("isEdit", true);
             return "listings/form";
         }
@@ -204,5 +300,15 @@ public class ListingController {
         }
 
         return "redirect:/my-listings";
+    }
+
+    // --- Seller's Promotion Payments History ---
+
+    @GetMapping("/payments")
+    public String myPromotions(Model model) {
+        User user = authResolver.getCurrentUser();
+        List<com.bookloop.entity.PromotionPayment> payments = promotionService.getSellerPayments(user);
+        model.addAttribute("payments", payments);
+        return "listings/payments";
     }
 }
