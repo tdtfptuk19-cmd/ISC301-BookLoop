@@ -10,9 +10,12 @@ import com.bookloop.payment.provider.MockPaymentProvider;
 import com.bookloop.repository.PaymentTransactionRepository;
 import com.bookloop.service.OrderService;
 import com.bookloop.service.PaymentManagerService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
@@ -30,17 +33,20 @@ public class BuyerPaymentController {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final MockPaymentProvider mockPaymentProvider;
     private final AuthenticatedUserResolver authResolver;
+    private final boolean mockPaymentEnabled;
 
     public BuyerPaymentController(OrderService orderService,
                                   PaymentManagerService paymentManagerService,
                                   PaymentTransactionRepository paymentTransactionRepository,
                                   MockPaymentProvider mockPaymentProvider,
-                                  AuthenticatedUserResolver authResolver) {
+                                  AuthenticatedUserResolver authResolver,
+                                  @Value("${bookloop.payment.mock-enabled:false}") boolean mockPaymentEnabled) {
         this.orderService = orderService;
         this.paymentManagerService = paymentManagerService;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.mockPaymentProvider = mockPaymentProvider;
         this.authResolver = authResolver;
+        this.mockPaymentEnabled = mockPaymentEnabled;
     }
 
     /**
@@ -87,9 +93,18 @@ public class BuyerPaymentController {
      * Renders simulated partner payment screen for Sandbox/Demo environment.
      */
     @GetMapping("/mock-checkout")
-    public String showMockCheckout(@RequestParam("ref") String merchantReference,
+    public String showMockCheckout(@RequestParam(value = "ref", required = false) String merchantReference,
                                    Model model,
                                    RedirectAttributes redirectAttributes) {
+        if (!mockPaymentEnabled) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Mock checkout is disabled");
+        }
+
+        if (merchantReference == null || merchantReference.isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy giao dịch thanh toán.");
+            return "redirect:/orders/my-purchases";
+        }
+
         Optional<PaymentTransaction> txOpt = paymentTransactionRepository.findByMerchantReference(merchantReference);
         if (txOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy giao dịch thanh toán.");
@@ -107,8 +122,17 @@ public class BuyerPaymentController {
      * Transitions payment to PAID_HELD and order to PAID_HELD.
      */
     @PostMapping("/mock-checkout/simulate-success")
-    public String simulatePaymentSuccess(@RequestParam("merchantReference") String merchantReference,
+    public String simulatePaymentSuccess(@RequestParam(value = "merchantReference", required = false) String merchantReference,
                                          RedirectAttributes redirectAttributes) {
+        if (!mockPaymentEnabled) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Mock checkout is disabled");
+        }
+
+        if (merchantReference == null || merchantReference.isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Giao dịch không tồn tại.");
+            return "redirect:/orders/my-purchases";
+        }
+
         Optional<PaymentTransaction> txOpt = paymentTransactionRepository.findByMerchantReference(merchantReference);
         if (txOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Giao dịch không tồn tại.");
@@ -134,4 +158,3 @@ public class BuyerPaymentController {
         return "redirect:/orders/" + (orderId != null ? orderId : "my-purchases");
     }
 }
-
